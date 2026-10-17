@@ -14,12 +14,13 @@ An enterprise-ready, containerized microservice that turns voiceover audio or te
          │                          │
          ▼                          ▼
  [Async Worker Pipeline]   [MinIO / S3 Storage Engine]
-   1. Multi-lingual Speech & Word-Level STT (Edge-TTS + Faster-Whisper)
+   1. Multi-lingual Speech & Word-Level STT (Edge-TTS + Faster-Whisper: EN, HI, TA)
    2. Contextual Scene Segmentation & Polysemy Disambiguation
-   3. Dual-Footage Arbitration (Pexels / Pixabay / IncuBrix Generative Video)
-   4. VLM Semantic Relevance Scoring (CLIP / Vision Cosine Calibration)
-   5. FFmpeg Video Compositor (16:9, 9:16 Smart Crop, 1:1, Color Norm, Burn-in SRT)
-   6. Fast Single-Scene Clip Swapper & Manifest Builder
+   3. Dual-Footage Arbitration (Pexels / Pixabay / Kinetic Procedural Motion Engine)
+   4. Animated AI Character Host (Lip-sync phonemes, blinking eyes, chart gestures)
+   5. VLM Semantic Relevance Scoring (Visual feature cosine calibration)
+   6. FFmpeg Video Compositor (16:9, 9:16 Smart Crop, 1:1, Color Norm, Burn-in SRT)
+   7. Fast Single-Scene Clip Swapper & Audit-Ready Manifest Builder
 ```
 
 ---
