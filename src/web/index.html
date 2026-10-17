@@ -22,7 +22,7 @@
         </div>
         <div>
           <div class="brand-title">IncuBrix</div>
-          <div class="brand-subtitle">B-Roll Video Engine</div>
+          <div class="brand-subtitle">Script & Voiceover to B-Roll Engine</div>
         </div>
       </div>
       <div class="header-actions">
@@ -36,100 +36,103 @@
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
             <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
           API Spec (OpenAPI 3.1)
         </a>
-        <a href="/health" target="_blank" class="nav-link">Health</a>
+        <a href="/health" target="_blank" class="nav-link">Health Check</a>
       </div>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="main-container">
-    <div class="grid-layout">
-      <!-- Left Column: Input Form -->
-      <section class="card form-card">
+    <div class="flow-layout">
+      
+      <!-- STEP 1: Full-Width Narration & Directives -->
+      <section class="card full-width-card">
         <div class="card-title-bar">
           <div class="step-num">1</div>
-          <div>
+          <div class="flex-1">
             <h2>Narration & Directives</h2>
-            <p class="card-caption">Choose script, voiceover audio, or structured scenes</p>
+            <p class="card-caption">Input raw script text, upload an audio voiceover, or define structured IncuBrix scene pairs</p>
+          </div>
+          <div class="presets-bar">
+            <span class="preset-label">Quick Presets:</span>
+            <button type="button" class="preset-btn" id="preset-finance">Finance Growth</button>
+            <button type="button" class="preset-btn" id="preset-cloud">Cloud Tech</button>
+            <button type="button" class="preset-btn" id="preset-hindi">हिंदी Hindi</button>
+            <button type="button" class="preset-btn" id="preset-tamil">தமிழ் Tamil</button>
           </div>
         </div>
 
-        <!-- Preset Quick Fill Pills -->
-        <div class="presets-bar">
-          <span class="preset-label">Quick Presets:</span>
-          <button type="button" class="preset-btn" id="preset-finance">Finance Growth</button>
-          <button type="button" class="preset-btn" id="preset-cloud">Cloud Tech</button>
-          <button type="button" class="preset-btn" id="preset-hindi">हिंदी Hindi</button>
-          <button type="button" class="preset-btn" id="preset-tamil">தமிழ் Tamil</button>
-        </div>
-
-        <!-- Input Mode Tabs -->
+        <!-- Segmented Mode Control Tabs -->
         <div class="segmented-control">
-          <button class="seg-btn active" data-tab="tab-script">Text Script</button>
-          <button class="seg-btn" data-tab="tab-audio">Audio Voiceover</button>
-          <button class="seg-btn" data-tab="tab-scenes">IncuBrix Scenes</button>
+          <button class="seg-btn active" data-tab="tab-script">Text Script to Voiceover</button>
+          <button class="seg-btn" data-tab="tab-audio">Upload Audio Voiceover</button>
+          <button class="seg-btn" data-tab="tab-scenes">IncuBrix Structured Scenes</button>
         </div>
 
         <!-- Tab 1: Text Script -->
         <div class="tab-pane active" id="tab-script">
-          <div class="field-group">
-            <label for="script-text">Script Narration</label>
-            <textarea id="script-text" rows="5" placeholder="Enter your narration script here..."></textarea>
-          </div>
-          <div class="field-group">
-            <label for="tts-voice">Neural Voice (Multi-lingual)</label>
-            <div class="select-wrapper">
-              <select id="tts-voice">
-                <option value="en-US-AriaNeural">English (US) — Aria (Neural)</option>
-                <option value="en-IN-female">English (India) — Neerja</option>
-                <option value="en-IN-male">English (India) — Prabhat</option>
-                <option value="hi-IN-female">Hindi — Swara (Neural)</option>
-                <option value="hi-IN-male">Hindi — Madhur (Neural)</option>
-                <option value="ta-IN-female">Tamil — Pallavi (Neural)</option>
-                <option value="ta-IN-male">Tamil — Valluvar (Neural)</option>
-              </select>
+          <div class="two-col-grid">
+            <div class="field-group flex-2">
+              <label for="script-text">Script Narration Text</label>
+              <textarea id="script-text" rows="4" placeholder="Enter your script here... Or click a Quick Preset above to auto-fill."></textarea>
+            </div>
+            <div class="field-group flex-1">
+              <label for="tts-voice">Neural TTS Voice (Multi-lingual)</label>
+              <div class="select-wrapper">
+                <select id="tts-voice">
+                  <option value="en-US-AriaNeural">English (US) — Aria (Neural)</option>
+                  <option value="en-IN-female">English (India) — Neerja</option>
+                  <option value="en-IN-male">English (India) — Prabhat</option>
+                  <option value="hi-IN-female">Hindi — Swara (Neural)</option>
+                  <option value="hi-IN-male">Hindi — Madhur (Neural)</option>
+                  <option value="ta-IN-female">Tamil — Pallavi (Neural)</option>
+                  <option value="ta-IN-male">Tamil — Valluvar (Neural)</option>
+                </select>
+              </div>
+              <p class="field-hint">Neural voices generate natural inflection with word-level forced alignment.</p>
             </div>
           </div>
         </div>
 
         <!-- Tab 2: Audio File / URL -->
         <div class="tab-pane" id="tab-audio">
-          <div class="field-group">
-            <label for="audio-upload">Upload Voiceover File (.mp3, .wav, .m4a)</label>
-            <div class="file-upload-box" id="dropzone">
-              <input type="file" id="audio-upload" accept="audio/mp3,audio/wav,audio/m4a,audio/*">
-              <div class="upload-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="17 8 12 3 7 8"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
+          <div class="two-col-grid">
+            <div class="field-group flex-1">
+              <label for="audio-upload">Upload Voiceover File (.mp3, .wav, .m4a)</label>
+              <div class="file-upload-box" id="dropzone">
+                <input type="file" id="audio-upload" accept="audio/mp3,audio/wav,audio/m4a,audio/*">
+                <div class="upload-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <span id="upload-filename">Drag & drop or browse voiceover audio (up to 10 min)</span>
               </div>
-              <span id="upload-filename">Drag & drop or browse voiceover audio</span>
             </div>
-          </div>
-          <div class="divider-text"><span>OR PROVIDE URL</span></div>
-          <div class="field-group">
-            <label for="audio-url">Audio HTTP URL</label>
-            <input type="url" id="audio-url" placeholder="https://example.com/narration.mp3">
+            <div class="field-group flex-1">
+              <label for="audio-url">Or Provide Audio Public URL</label>
+              <input type="url" id="audio-url" placeholder="https://storage.example.com/voiceover.mp3">
+              <p class="field-hint">Accepts any accessible HTTP/HTTPS audio file.</p>
+            </div>
           </div>
         </div>
 
         <!-- Tab 3: IncuBrix Scenes -->
         <div class="tab-pane" id="tab-scenes">
           <div class="field-group">
-            <label for="scenes-json">Custom Scene List (JSON with text & visual_hint)</label>
-            <textarea id="scenes-json" rows="6" class="code-editor">[
+            <label for="scenes-json">Custom Scene List (JSON format with text and visual_hint per scene)</label>
+            <textarea id="scenes-json" rows="5" class="code-editor">[
   {
-    "text": "Sales grew 40% in 2025 across all sectors.",
+    "text": "In 2025, corporate sales grew 40% across all markets.",
     "visual_hint": "Modern financial growth analytics dashboard on tablet"
   },
   {
-    "text": "Our engineering relies on automated cloud computing.",
+    "text": "Our engineering relies on automated cloud computing infrastructure.",
     "visual_hint": "High-tech data center server room glowing blue LED racks"
   },
   {
@@ -139,79 +142,83 @@
 ]</textarea>
           </div>
         </div>
+      </section>
 
-        <div class="section-divider"></div>
-
+      <!-- STEP 2: Full-Width Formatting & Content Guardrails -->
+      <section class="card full-width-card">
         <div class="card-title-bar">
           <div class="step-num">2</div>
           <div>
-            <h2>Formatting & Safety Guardrails</h2>
-            <p class="card-caption">Aspect ratios, avoid filters, and burned subtitles</p>
+            <h2>Formatting, Aspect Ratios & Safety Guardrails</h2>
+            <p class="card-caption">Set video dimensions, visual styling, avoidance parameters, and subtitle burn-in</p>
           </div>
         </div>
 
-        <div class="field-group">
-          <label>Target Aspect Ratios</label>
-          <div class="pill-checkboxes">
-            <label class="pill-check">
-              <input type="checkbox" id="ratio-16-9" value="16:9" checked>
-              <span class="pill-label">16:9 Landscape</span>
-            </label>
-            <label class="pill-check">
-              <input type="checkbox" id="ratio-9-16" value="9:16" checked>
-              <span class="pill-label">9:16 Shorts / Reels</span>
-            </label>
-            <label class="pill-check">
-              <input type="checkbox" id="ratio-1-1" value="1:1">
-              <span class="pill-label">1:1 Square</span>
-            </label>
+        <div class="three-col-grid">
+          <!-- Col 1: Aspect Ratios -->
+          <div class="field-group">
+            <label>Output Aspect Ratios</label>
+            <div class="pill-checkboxes">
+              <label class="pill-check">
+                <input type="checkbox" id="ratio-16-9" value="16:9" checked>
+                <span class="pill-label">16:9 Landscape</span>
+              </label>
+              <label class="pill-check">
+                <input type="checkbox" id="ratio-9-16" value="9:16" checked>
+                <span class="pill-label">9:16 Shorts / Reels</span>
+              </label>
+              <label class="pill-check">
+                <input type="checkbox" id="ratio-1-1" value="1:1">
+                <span class="pill-label">1:1 Square</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Col 2: Style & Avoid -->
+          <div class="field-group">
+            <label for="video-style">Visual Style Guidance</label>
+            <input type="text" id="video-style" value="bright, modern, real-world footage">
+            <label for="avoid-keywords" style="margin-top: 10px;">Content to Avoid</label>
+            <input type="text" id="avoid-keywords" placeholder="e.g. people's faces, alcohol" value="people's faces, alcohol">
+          </div>
+
+          <!-- Col 3: Subtitles & Action Button -->
+          <div class="field-group">
+            <label>Subtitles & Burn-in</label>
+            <div class="pill-checkboxes" style="margin-bottom: 12px;">
+              <label class="pill-check">
+                <input type="checkbox" id="burn-in-captions" checked>
+                <span class="pill-label">Burn-in Captions</span>
+              </label>
+              <label class="pill-check">
+                <input type="checkbox" id="generate-srt" checked disabled>
+                <span class="pill-label">Export .SRT</span>
+              </label>
+            </div>
+
+            <!-- Prominent Generation Button -->
+            <button id="btn-generate" class="submit-btn">
+              <span id="btn-text">Generate B-Roll Video</span>
+              <span id="btn-spinner" class="spinner-dot hidden"></span>
+            </button>
           </div>
         </div>
-
-        <div class="field-group">
-          <label for="video-style">Visual Style Guidance</label>
-          <input type="text" id="video-style" value="bright, modern, real-world footage">
-        </div>
-
-        <div class="field-group">
-          <label for="avoid-keywords">Content to Avoid</label>
-          <input type="text" id="avoid-keywords" placeholder="e.g. people's faces, alcohol" value="people's faces, alcohol">
-        </div>
-
-        <div class="field-group">
-          <label>Subtitles & Captions</label>
-          <div class="pill-checkboxes">
-            <label class="pill-check">
-              <input type="checkbox" id="burn-in-captions" checked>
-              <span class="pill-label">Burn-in Captions on Video</span>
-            </label>
-            <label class="pill-check">
-              <input type="checkbox" id="generate-srt" checked disabled>
-              <span class="pill-label">Export .SRT Captions</span>
-            </label>
-          </div>
-        </div>
-
-        <button id="btn-generate" class="submit-btn">
-          <span id="btn-text">Generate B-Roll Video</span>
-          <span id="btn-spinner" class="spinner-dot hidden"></span>
-        </button>
       </section>
 
-      <!-- Right Column: Live Monitor & Video Output -->
-      <section class="card output-card">
+      <!-- STEP 3: Full-Width Video Output, Timeline & Provenance -->
+      <section class="card full-width-card output-card">
         <div class="card-title-bar justify-between">
           <div class="flex-align-center gap-3">
             <div class="step-num step-accent">3</div>
             <div>
-              <h2>Video Output & Timeline</h2>
-              <p class="card-caption">Preview multi-ratio videos, inspect provenance, and swap clips</p>
+              <h2>Video Output, Timeline & Provenance</h2>
+              <p class="card-caption">Preview multi-ratio videos, inspect provenance, and swap clips on the fly</p>
             </div>
           </div>
           <span class="status-badge" id="job-status-badge">Standby</span>
         </div>
 
-        <!-- Progress Bar -->
+        <!-- Progress Track -->
         <div class="progress-box" id="progress-container">
           <div class="progress-header">
             <span id="progress-step-text" class="step-label">Ready to process</span>
@@ -222,47 +229,52 @@
           </div>
         </div>
 
-        <!-- Video Player Display -->
-        <div class="player-box hidden" id="video-player-wrapper">
-          <div class="aspect-bar">
-            <span class="aspect-label">Preview Aspect Ratio:</span>
-            <div class="ratio-tabs" id="ratio-buttons">
-              <!-- Dynamically populated buttons -->
+        <!-- Video Player & Scene Timeline Display -->
+        <div class="player-wrapper hidden" id="video-player-wrapper">
+          <div class="output-two-col">
+            <!-- Left: Video Player & Downloads -->
+            <div class="video-column">
+              <div class="aspect-bar">
+                <span class="aspect-label">Preview Aspect Ratio:</span>
+                <div class="ratio-tabs" id="ratio-buttons">
+                  <!-- Dynamically populated buttons -->
+                </div>
+              </div>
+              
+              <div class="video-viewport">
+                <video id="main-video" controls playsinline></video>
+              </div>
+
+              <div class="action-bar">
+                <a id="btn-download-video" class="btn-action btn-primary-action" download>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download Video
+                </a>
+                <a id="btn-download-srt" class="btn-action btn-secondary-action" download>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  Download .SRT
+                </a>
+              </div>
             </div>
-          </div>
-          
-          <div class="video-viewport">
-            <video id="main-video" controls playsinline></video>
-          </div>
 
-          <div class="action-bar">
-            <a id="btn-download-video" class="btn-action btn-primary-action" download>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              Download Finished Video
-            </a>
-            <a id="btn-download-srt" class="btn-action btn-secondary-action" download>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
-              Download .SRT
-            </a>
-          </div>
-        </div>
-
-        <!-- Interactive Scene Timeline -->
-        <div class="timeline-box hidden" id="timeline-container">
-          <div class="timeline-title-row">
-            <h3>Scene Segmentation & Provenance</h3>
-            <span class="clean-badge">100% Speech-Covered</span>
-          </div>
-          <p class="timeline-hint">Scenes cut strictly at speech boundaries. Swap any clip in real-time with sub-linear fast partial rendering.</p>
-          <div class="scene-stream" id="scene-list">
-            <!-- Dynamically populated scene cards -->
+            <!-- Right: Interactive Scene Timeline -->
+            <div class="timeline-column" id="timeline-container">
+              <div class="timeline-title-row">
+                <h3>Scene Segmentation & Provenance</h3>
+                <span class="clean-badge">100% Speech-Covered</span>
+              </div>
+              <p class="timeline-hint">Every clip is timed to voice pauses. Click <strong>Swap Clip</strong> to replace any scene with sub-linear fast partial re-render.</p>
+              <div class="scene-stream" id="scene-list">
+                <!-- Dynamically populated scene cards -->
+              </div>
+            </div>
           </div>
         </div>
 
@@ -281,7 +293,7 @@
         <!-- Empty State Prompt -->
         <div class="empty-placeholder" id="empty-state">
           <div class="empty-graphic">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
               <line x1="7" y1="2" x2="7" y2="22"></line>
               <line x1="17" y1="2" x2="17" y2="22"></line>
@@ -292,10 +304,11 @@
               <line x1="17" y1="7" x2="22" y2="7"></line>
             </svg>
           </div>
-          <h3>Awaiting Generation</h3>
-          <p>Choose an input on the left or click one of the <strong>Quick Presets</strong> above, then click <strong>Generate B-Roll Video</strong> to produce multi-aspect B-roll video.</p>
+          <h3>Awaiting Video Generation</h3>
+          <p>Fill out the script in Step 1, review your formatting in Step 2, then click <strong>Generate B-Roll Video</strong> to produce your video.</p>
         </div>
       </section>
+
     </div>
   </main>
 
@@ -315,7 +328,7 @@
           <p id="swap-scene-narration"></p>
         </div>
         <div class="field-group">
-          <label for="swap-query">Replacement Search Query</label>
+          <label for="swap-query">Replacement Search Query / Concept</label>
           <input type="text" id="swap-query" placeholder="e.g. Modern high-tech skyline at sunset">
         </div>
         <div class="field-group">
@@ -325,7 +338,7 @@
               <option value="auto">Auto (Smart Rule-Based Selection)</option>
               <option value="pexels">Pexels Commercial Stock API</option>
               <option value="pixabay">Pixabay Commercial Stock API</option>
-              <option value="ai_gen">IncuBrix Generative Synthesis</option>
+              <option value="ai_gen">IncuBrix Kinetic Synthesis</option>
             </select>
           </div>
         </div>
