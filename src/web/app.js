@@ -43,11 +43,17 @@ function initPresets() {
     if (pane) pane.classList.add('active');
   };
 
+  function setMascot(msg) {
+    const el = document.getElementById('mascot-message');
+    if (el) el.textContent = msg;
+  }
+
   document.getElementById('preset-finance')?.addEventListener('click', () => {
     selectTab('tab-script');
     document.getElementById('script-text').value = 
       "In 2025, our corporate sales grew 40% across all markets. When you deposit capital into a high yield savings bank, compound interest works quietly in your favor. Every smart investment begins with patience.";
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
+    setMascot("📈 Great choice! I will synthesize ascending financial stock graphs, candlestick growth curves, and the animated character host!");
   });
 
   document.getElementById('preset-cloud')?.addEventListener('click', () => {
@@ -55,6 +61,7 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "Modern cloud computing infrastructure powers millions of servers globally. Our distributed clusters guarantee zero downtime, automated failovers, and resilient data backups.";
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
+    setMascot("☁️ High-tech choice! I will synthesize 3D cybernetic perspective grids, server nodes, and pulse circuits!");
   });
 
   document.getElementById('preset-hindi')?.addEventListener('click', () => {
@@ -62,6 +69,7 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "तकनीक और नवाचार की दुनिया में आपका स्वागत है। हमारा उद्देश्य रचनाकारों को कृत्रिम बुद्धिमत्ता के साथ शक्तिशाली वीडियो बनाने में सहायता करना है।";
     document.getElementById('tts-voice').value = "hi-IN-female";
+    setMascot("🇮🇳 बहुत बढ़िया! हिंदी में वॉयसओवर और असीमित एनिमेटेड दृश्य तैयार कर रहा हूँ!");
   });
 
   document.getElementById('preset-tamil')?.addEventListener('click', () => {
@@ -69,6 +77,7 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "செயற்கை நுண்ணறிவு மூலம் காணொளிகளை உருவாக்குவது இப்போது மிக எளிது. உங்கள் படைப்பாற்றலை அடுத்த கட்டத்திற்கு கொண்டு செல்லுங்கள்.";
     document.getElementById('tts-voice').value = "ta-IN-female";
+    setMascot("✨ அருமை! தமிழ் குரல்வழியில் அனிமேஷன் காட்சிகளை உருவாக்குகிறேன்!");
   });
 }
 
@@ -196,6 +205,8 @@ function setLoadingState(loading) {
     const badge = document.getElementById('job-status-badge');
     badge.textContent = "Running";
     badge.className = "status-badge badge-running";
+    const mascot = document.getElementById('mascot-message');
+    if (mascot) mascot.textContent = "⚡ Generating your B-roll video! Transcribing speech with Faster-Whisper, animating the character host, and rendering scene cuts...";
   } else {
     txt.textContent = "Generate B-Roll Video";
     spinner.classList.add('hidden');
@@ -248,6 +259,9 @@ async function renderResults(outputs) {
   document.getElementById('video-player-wrapper').classList.remove('hidden');
   document.getElementById('timeline-container').classList.remove('hidden');
   document.getElementById('inspect-section').classList.remove('hidden');
+
+  const mascot = document.getElementById('mascot-message');
+  if (mascot) mascot.textContent = "🎉 Awesome! Your finished video is ready! Enjoy the playback with animated character host, switch aspect ratios (16:9 / 9:16), or swap any scene clip below!";
 
   // Multi-aspect ratio switcher
   const ratioBtnContainer = document.getElementById('ratio-buttons');

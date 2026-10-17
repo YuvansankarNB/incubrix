@@ -278,8 +278,9 @@ class FootageManager:
                     cv2.circle(canvas, (cx, cy), 6, (220, 180, 255), -1, cv2.LINE_AA)
                     cv2.line(canvas, (int(width * 0.5), int(height * 0.5)), (cx, cy), (60, 40, 80), 1, cv2.LINE_AA)
 
-                cv2.putText(canvas, "INCUBRIX CREATIVE STUDIO", (int(width * 0.1), int(height * 0.15)), 
-                            cv2.FONT_HERSHEY_DUPLEX, 1.1, (240, 200, 255), 2, cv2.LINE_AA)
+            # Render Animated AI Character Presenter (Creator Avatar)
+            theme_key = "finance" if is_finance else ("tech" if is_tech else ("trust" if is_trust else "creative"))
+            self._draw_animated_character(canvas, frame_idx, t, width, height, theme_key)
 
             # Subtle vignette and timestamp footer
             cv2.rectangle(canvas, (0, height - 40), (width, height), (10, 10, 10), -1)
@@ -315,9 +316,106 @@ class FootageManager:
             attribution="IncuBrix Generative Motion Engine",
             original_url=f"synthetic://render/{clip_id}",
             is_ai_generated=True,
-            selection_reason=f"Synthesized dynamic {theme_name} motion graphics matched to query: '{query}'",
+            selection_reason=f"Synthesized dynamic {theme_name} motion graphics with animated character host matched to query: '{query}'",
             relevance_score=4.7
         )
+
+    def _draw_animated_character(self, canvas: np.ndarray, frame_idx: int, t: float, width: int, height: int, theme: str):
+        """
+        Renders a stylized, animated AI character presenter directly into the video scene:
+        - Animated blinking eyes with glancing specular pupils
+        - Synchronized lip-flap mouth phoneme movement
+        - Floating/breathing harmonic motion
+        - Raised gesturing arm pointing toward the scene visuals
+        - Futuristic smart glasses / headset with glowing LED
+        """
+        # Character placement on the right side of the screen
+        bob_y = int(math.sin(t * 3.8) * 8)
+        char_x = int(width * 0.82)
+        char_y = int(height * 0.68) + bob_y
+
+        # Ambient drop shadow beneath character
+        cv2.ellipse(canvas, (char_x, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Torso & Outfit (Modern creator hoodie/blazer)
+        outfit_color = (130, 70, 35) if theme == "finance" else ((40, 110, 160) if theme == "tech" else (90, 45, 120))
+        cv2.ellipse(canvas, (char_x, char_y + 170), (110, 135), 0, 0, 360, outfit_color, -1, cv2.LINE_AA)
+        
+        # Inner shirt / collar triangle
+        cv2.fillPoly(canvas, [np.array([
+            [char_x - 30, char_y + 80],
+            [char_x, char_y + 145],
+            [char_x + 30, char_y + 80]
+        ], dtype=np.int32)], (240, 240, 245), cv2.LINE_AA)
+
+        # Gesturing Arm & Pointing Hand (towards the data chart / center visuals)
+        arm_color = outfit_color
+        hand_target_x = int(char_x - 120 + math.cos(t * 3.5) * 18)
+        hand_target_y = int(char_y + 35 + math.sin(t * 3.5) * 22)
+        elbow_x = int(char_x - 72)
+        elbow_y = int(char_y + 120)
+        
+        cv2.line(canvas, (char_x - 50, char_y + 130), (elbow_x, elbow_y), arm_color, 24, cv2.LINE_AA)
+        cv2.line(canvas, (elbow_x, elbow_y), (hand_target_x, hand_target_y), (220, 185, 155), 18, cv2.LINE_AA)
+        cv2.circle(canvas, (hand_target_x, hand_target_y), 15, (220, 185, 155), -1, cv2.LINE_AA)
+        # Pointing index finger
+        cv2.line(canvas, (hand_target_x, hand_target_y), (hand_target_x - 22, hand_target_y - 12), (220, 185, 155), 6, cv2.LINE_AA)
+
+        # Neck
+        cv2.rectangle(canvas, (char_x - 20, char_y + 50), (char_x + 20, char_y + 90), (210, 175, 145), -1)
+
+        # Stylized Head & Warm Skin Tone
+        cv2.ellipse(canvas, (char_x, char_y), (65, 80), 0, 0, 360, (230, 195, 165), -1, cv2.LINE_AA)
+
+        # Modern Hair
+        hair_color = (35, 25, 25)
+        cv2.ellipse(canvas, (char_x, char_y - 42), (74, 55), 0, 180, 360, hair_color, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (char_x - 25, char_y - 46), (45, 30), 20, 0, 360, hair_color, -1, cv2.LINE_AA)
+
+        # Headset / Headphones
+        cv2.ellipse(canvas, (char_x - 68, char_y - 5), (14, 28), 0, 0, 360, (50, 50, 50), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (char_x + 68, char_y - 5), (14, 28), 0, 0, 360, (50, 50, 50), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (char_x, char_y - 30), (70, 75), 0, 180, 360, (60, 60, 60), 4, cv2.LINE_AA)
+        # Microphone boom with blinking status LED
+        cv2.line(canvas, (char_x + 68, char_y), (char_x + 30, char_y + 40), (40, 40, 40), 3, cv2.LINE_AA)
+        cv2.circle(canvas, (char_x + 30, char_y + 40), 5, (20, 220, 120), -1, cv2.LINE_AA)
+
+        # Eyes & Blinking Animation
+        eye_y = char_y - 8
+        eye_left_x = char_x - 26
+        eye_right_x = char_x + 26
+        is_blinking = (frame_idx % 110) < 6
+
+        if is_blinking:
+            cv2.line(canvas, (eye_left_x - 12, eye_y), (eye_left_x + 12, eye_y), (40, 30, 25), 3, cv2.LINE_AA)
+            cv2.line(canvas, (eye_right_x - 12, eye_y), (eye_right_x + 12, eye_y), (40, 30, 25), 3, cv2.LINE_AA)
+        else:
+            # Sclera (White)
+            cv2.ellipse(canvas, (eye_left_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.ellipse(canvas, (eye_right_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            # Pupils (glancing slightly left towards the scene visuals)
+            pupil_offset_x = int(math.sin(t * 1.8) * 3) - 3
+            cv2.circle(canvas, (eye_left_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
+            cv2.circle(canvas, (eye_right_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
+            # Specular sparkle reflection
+            cv2.circle(canvas, (eye_left_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.circle(canvas, (eye_right_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
+            # Eyebrows
+            cv2.line(canvas, (eye_left_x - 12, eye_y - 18), (eye_left_x + 12, eye_y - 19), (40, 30, 25), 3, cv2.LINE_AA)
+            cv2.line(canvas, (eye_right_x - 12, eye_y - 19), (eye_right_x + 12, eye_y - 18), (40, 30, 25), 3, cv2.LINE_AA)
+
+        # Animated Talking Mouth (Lip-flap oscillating with narration)
+        mouth_y = char_y + 36
+        mouth_open = int(max(3, abs(math.sin(t * 14)) * 14))
+        cv2.ellipse(canvas, (char_x, mouth_y), (16, mouth_open), 0, 0, 360, (50, 30, 160), -1, cv2.LINE_AA)
+        if mouth_open > 6:
+            cv2.ellipse(canvas, (char_x, mouth_y - mouth_open + 4), (10, 3), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+
+        # Character Badge / Nameplate
+        badge_y = char_y + 240
+        cv2.rectangle(canvas, (char_x - 85, badge_y - 14), (char_x + 85, badge_y + 14), (20, 25, 35), -1)
+        cv2.rectangle(canvas, (char_x - 85, badge_y - 14), (char_x + 85, badge_y + 14), (60, 150, 240), 1, cv2.LINE_AA)
+        cv2.putText(canvas, "AI PRESENTER", (char_x - 68, badge_y + 5), cv2.FONT_HERSHEY_DUPLEX, 0.52, (240, 240, 255), 1, cv2.LINE_AA)
 
     async def fetch_pexels_clip(self, query: str, duration: float) -> Optional[FootageClip]:
         """Queries Pexels stock video API with commercial license tracking."""

@@ -48,6 +48,51 @@
   <main class="main-container">
     <div class="flow-layout">
       
+      <!-- Animated Character Mascot Companion (Brixy) -->
+      <section class="mascot-banner">
+        <div class="mascot-container">
+          <div class="mascot-avatar">
+            <svg class="mascot-svg" viewBox="0 0 120 120" width="84" height="84">
+              <!-- Antenna with pulsating light -->
+              <line x1="60" y1="26" x2="60" y2="10" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="60" cy="8" r="7" fill="#3b82f6" class="mascot-antenna-glow"/>
+              
+              <!-- Body / Base -->
+              <rect x="34" y="82" width="52" height="28" rx="10" fill="#2563eb"/>
+              <rect x="42" y="90" width="36" height="12" rx="4" fill="#60a5fa" opacity="0.4"/>
+
+              <!-- Robot Head -->
+              <rect x="22" y="24" width="76" height="60" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
+              
+              <!-- Visor Screen -->
+              <rect x="30" y="34" width="60" height="38" rx="12" fill="#0f172a"/>
+              
+              <!-- Expressive Eyes with Blinking Animation -->
+              <g class="mascot-eyes">
+                <circle cx="46" cy="52" r="7" fill="#38bdf8"/>
+                <circle cx="44" cy="50" r="2.5" fill="#ffffff"/>
+                <circle cx="74" cy="52" r="7" fill="#38bdf8"/>
+                <circle cx="72" cy="50" r="2.5" fill="#ffffff"/>
+              </g>
+
+              <!-- Cute Smiling Mouth -->
+              <path d="M52 64 Q60 70 68 64" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+
+              <!-- Headphone ear muffs -->
+              <rect x="15" y="42" width="8" height="24" rx="4" fill="#3b82f6"/>
+              <rect x="97" y="42" width="8" height="24" rx="4" fill="#3b82f6"/>
+            </svg>
+          </div>
+          <div class="mascot-bubble">
+            <div class="mascot-header">
+              <span class="mascot-badge">AI Host</span>
+              <span class="mascot-name">Brixy</span>
+            </div>
+            <p id="mascot-message">👋 Hi! I'm Brixy, your AI video director! Select a script preset or upload voiceover audio below, and I'll generate your multi-aspect B-roll video scene-by-scene!</p>
+          </div>
+        </div>
+      </section>
+
       <!-- STEP 1: Full-Width Narration & Directives -->
       <section class="card full-width-card">
         <div class="card-title-bar">

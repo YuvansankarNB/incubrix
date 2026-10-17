@@ -183,6 +183,109 @@ body {
   gap: 24px;
 }
 
+/* Mascot Animated Companion */
+.mascot-banner {
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.06);
+}
+
+.mascot-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.mascot-avatar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mascot-svg {
+  animation: mascot-float 3.5s ease-in-out infinite;
+}
+
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+.mascot-antenna-glow {
+  animation: antenna-pulse 1.8s infinite;
+}
+
+@keyframes antenna-pulse {
+  0%, 100% { fill: #3b82f6; filter: drop-shadow(0 0 2px #3b82f6); }
+  50% { fill: #10b981; filter: drop-shadow(0 0 8px #10b981); }
+}
+
+.mascot-eyes {
+  animation: mascot-blink 4s infinite;
+  transform-origin: center;
+}
+
+@keyframes mascot-blink {
+  0%, 46%, 50%, 100% { transform: scaleY(1); }
+  48% { transform: scaleY(0.1); }
+}
+
+.mascot-bubble {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  flex: 1;
+}
+
+.mascot-bubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid #ffffff;
+}
+
+.mascot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mascot-badge {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  text-transform: uppercase;
+}
+
+.mascot-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.mascot-bubble p {
+  font-size: 0.88rem;
+  color: var(--text-body);
+  line-height: 1.45;
+}
+
 /* Full Width Cards */
 .card {
   background: var(--bg-card);
