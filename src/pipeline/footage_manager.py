@@ -833,6 +833,89 @@ class FootageManager:
             relevance_score=4.9
         )
 
+    # ─────────────────────── SHARED CHARACTER HELPERS ──────────────────────────
+
+    def _draw_mouth(self, canvas, cx: int, cy: int, lip_sync_energy: float,
+                    oral_color=(30, 20, 120), tongue_color=(80, 70, 210)):
+        """Audio-driven lip-sync mouth shared by all characters."""
+        mouth_y = cy + 36
+        if lip_sync_energy > 0.04:
+            mouth_open_h = int(3 + lip_sync_energy * 26)
+            mouth_w = int(14 + lip_sync_energy * 7)
+            cv2.ellipse(canvas, (cx, mouth_y), (mouth_w, mouth_open_h),
+                        0, 0, 360, oral_color, -1, cv2.LINE_AA)
+            cv2.ellipse(canvas, (cx, mouth_y - mouth_open_h + 3),
+                        (mouth_w - 4, 3), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            if mouth_open_h > 10:
+                cv2.ellipse(canvas, (cx, mouth_y + mouth_open_h - 4),
+                            (mouth_w - 6, 4), 0, 0, 360, tongue_color, -1, cv2.LINE_AA)
+        else:
+            cv2.ellipse(canvas, (cx, mouth_y - 2), (14, 5), 0, 0, 180,
+                        (40, 30, 25), 3, cv2.LINE_AA)
+
+    def _draw_equalizer_bubble(self, canvas, cx: int, cy: int, t: float,
+                                lip_sync_energy: float,
+                                bubble_color=(100, 220, 255),
+                                bg_color=(28, 22, 34)):
+        """8-bar animated EQ speech-bubble above the character's head."""
+        bx, by = cx - 140, cy - 150
+        cv2.rectangle(canvas, (bx, by), (bx + 220, by + 55), bg_color, -1)
+        cv2.rectangle(canvas, (bx, by), (bx + 220, by + 55), bubble_color, 2, cv2.LINE_AA)
+        cv2.fillPoly(canvas, [np.array([
+            [bx + 140, by + 55], [bx + 165, by + 55], [bx + 130, by + 75]
+        ], dtype=np.int32)], bg_color, cv2.LINE_AA)
+        for bi in range(8):
+            bar_x = bx + 20 + bi * 22
+            jitter = math.sin(t * 18 + bi * 1.5) * 6
+            bar_h = int(max(4, lip_sync_energy * 34 + jitter))
+            col = (60, 240, 120) if bi % 3 == 0 else ((80, 220, 255) if bi % 3 == 1 else (60, 180, 240))
+            cv2.rectangle(canvas, (bar_x, by + 44 - bar_h), (bar_x + 12, by + 44), col, -1)
+
+    def _draw_badge(self, canvas, cx: int, cy: int, name_text: str,
+                    border_color=(60, 150, 240), bg_color=(20, 25, 35),
+                    text_color=(240, 240, 255)):
+        """Nameplate badge below the character."""
+        by = cy + 240
+        cv2.rectangle(canvas, (cx - 95, by - 14), (cx + 95, by + 14), bg_color, -1)
+        cv2.rectangle(canvas, (cx - 95, by - 14), (cx + 95, by + 14), border_color, 1, cv2.LINE_AA)
+        cv2.putText(canvas, name_text, (cx - 88, by + 5),
+                    cv2.FONT_HERSHEY_DUPLEX, 0.42, text_color, 1, cv2.LINE_AA)
+
+    def _draw_eyes(self, canvas, cx: int, cy: int, t: float, frame_idx: int,
+                   lip_sync_energy: float,
+                   pupil_color=(40, 80, 160), brow_color=(40, 30, 25)):
+        """Blinking animated eyes with glancing pupils and expressive brows."""
+        ey = cy - 8
+        lx, rx = cx - 26, cx + 26
+        is_blinking = (frame_idx % 110) < 6
+        if is_blinking:
+            cv2.line(canvas, (lx - 12, ey), (lx + 12, ey), brow_color, 3, cv2.LINE_AA)
+            cv2.line(canvas, (rx - 12, ey), (rx + 12, ey), brow_color, 3, cv2.LINE_AA)
+        else:
+            cv2.ellipse(canvas, (lx, ey), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.ellipse(canvas, (rx, ey), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            px = int(math.sin(t * 1.8) * 3) - 4
+            cv2.circle(canvas, (lx + px, ey), 7, pupil_color, -1, cv2.LINE_AA)
+            cv2.circle(canvas, (rx + px, ey), 7, pupil_color, -1, cv2.LINE_AA)
+            cv2.circle(canvas, (lx + px - 2, ey - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.circle(canvas, (rx + px - 2, ey - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
+            brow_lift = int(lip_sync_energy * 5)
+            cv2.line(canvas, (lx - 12, ey - 18 - brow_lift), (lx + 12, ey - 19 - brow_lift), brow_color, 3, cv2.LINE_AA)
+            cv2.line(canvas, (rx - 12, ey - 19 - brow_lift), (rx + 12, ey - 18 - brow_lift), brow_color, 3, cv2.LINE_AA)
+
+    def _draw_pointing_arm(self, canvas, cx: int, cy: int, t: float,
+                            arm_color=(90, 45, 120), skin_color=(220, 185, 155)):
+        """Animated gesturing arm pointing left toward the content cards."""
+        htx = int(cx - 130 + math.cos(t * 3.5) * 16)
+        hty = int(cy + 35 + math.sin(t * 3.5) * 20)
+        ex, ey = int(cx - 72), int(cy + 120)
+        cv2.line(canvas, (cx - 50, cy + 130), (ex, ey), arm_color, 24, cv2.LINE_AA)
+        cv2.line(canvas, (ex, ey), (htx, hty), skin_color, 18, cv2.LINE_AA)
+        cv2.circle(canvas, (htx, hty), 15, skin_color, -1, cv2.LINE_AA)
+        cv2.line(canvas, (htx, hty), (htx - 24, hty - 12), skin_color, 6, cv2.LINE_AA)
+
+    # ───────────────── THEME → CHARACTER DISPATCHER ─────────────────────────
+
     def _draw_animated_character(
         self,
         canvas: np.ndarray,
@@ -844,147 +927,529 @@ class FootageManager:
         lip_sync_energy: float,
         scene_text: str = ""
     ):
-        """
-        Renders a stylized, animated AI character presenter 'Brixy' with TRUE audio-driven lip sync:
-        - When speaking: mouth opens and articulates dynamically with voice volume/energy and phonemes.
-        - When silent: mouth smoothly closes with a confident smile.
-        - Speech Equalizer Bubble above head: 8 live bouncing neon audio spectrum bars.
-        - Animated blinking eyes with glancing specular pupils following the interactive cards.
-        - Gesturing arm pointing toward the content cards.
-        """
-        # Character placement on the right side of the screen
+        """Routes to one of 11 unique character renderers based on theme."""
+        draw_fn = {
+            "warning":  self._char_analyst,
+            "waste":    self._char_tired_worker,
+            "calendar": self._char_coach,
+            "tweak":    self._char_hacker,
+            "instant":  self._char_speedster,
+            "email":    self._char_executive,
+            "social":   self._char_influencer,
+            "finance":  self._char_banker,
+            "tech":     self._char_engineer,
+            "trust":    self._char_diplomat,
+            "creative": self._char_artist,
+        }.get(theme, self._char_analyst)
+        draw_fn(canvas, frame_idx, t, width, height, lip_sync_energy)
+
+    # ───────────────── 11 UNIQUE CHARACTER RENDERERS ─────────────────────────
+
+    def _char_analyst(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """WARNING theme — Alex the Analyst: navy suit, red tie, glasses, clipboard."""
         bob_y = int(math.sin(t * 3.8) * 8)
-        char_x = int(width * 0.80)
-        char_y = int(height * 0.68) + bob_y
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (145, 175, 215)   # warm tan (BGR)
+        hair = (25, 25, 35)
+        suit = (95, 30, 35)      # dark navy
+        tie  = (30, 30, 200)     # red tie
 
-        # Ambient drop shadow beneath character
-        cv2.ellipse(canvas, (char_x, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
 
-        # Torso & Outfit (Modern creator hoodie/blazer)
-        outfit_colors = {
-            "warning": (35, 30, 95),
-            "waste": (40, 25, 80),
-            "calendar": (45, 60, 110),
-            "tweak": (30, 80, 45),
-            "instant": (35, 95, 60),
-            "email": (80, 45, 45),
-            "social": (90, 40, 95),
-            "finance": (120, 70, 35),
-            "tech": (40, 110, 160),
-            "trust": (90, 45, 120),
-            "creative": (90, 45, 110)
-        }
-        outfit_color = outfit_colors.get(theme, (90, 45, 120))
-        cv2.ellipse(canvas, (char_x, char_y + 170), (110, 135), 0, 0, 360, outfit_color, -1, cv2.LINE_AA)
-        
-        # Inner shirt / collar triangle
-        cv2.fillPoly(canvas, [np.array([
-            [char_x - 30, char_y + 80],
-            [char_x, char_y + 145],
-            [char_x + 30, char_y + 80]
-        ], dtype=np.int32)], (240, 240, 245), cv2.LINE_AA)
+        # Body — navy suit jacket
+        cv2.ellipse(canvas, (cx, cy + 170), (115, 138), 0, 0, 360, suit, -1, cv2.LINE_AA)
+        # White shirt collar V
+        cv2.fillPoly(canvas, [np.array([[cx-28, cy+82],[cx, cy+148],[cx+28, cy+82]], np.int32)],
+                     (245, 245, 255), cv2.LINE_AA)
+        # Red tie
+        cv2.fillPoly(canvas, [np.array([[cx-9, cy+88],[cx+9, cy+88],[cx+5, cy+148],[cx-5, cy+148]], np.int32)],
+                     tie, cv2.LINE_AA)
 
-        # Gesturing Arm & Pointing Hand (towards the interactive data cards on the left)
-        arm_color = outfit_color
-        hand_target_x = int(char_x - 130 + math.cos(t * 3.5) * 16)
-        hand_target_y = int(char_y + 35 + math.sin(t * 3.5) * 20)
-        elbow_x = int(char_x - 72)
-        elbow_y = int(char_y + 120)
-        
-        cv2.line(canvas, (char_x - 50, char_y + 130), (elbow_x, elbow_y), arm_color, 24, cv2.LINE_AA)
-        cv2.line(canvas, (elbow_x, elbow_y), (hand_target_x, hand_target_y), (220, 185, 155), 18, cv2.LINE_AA)
-        cv2.circle(canvas, (hand_target_x, hand_target_y), 15, (220, 185, 155), -1, cv2.LINE_AA)
-        # Pointing index finger
-        cv2.line(canvas, (hand_target_x, hand_target_y), (hand_target_x - 24, hand_target_y - 12), (220, 185, 155), 6, cv2.LINE_AA)
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=suit, skin_color=skin)
 
         # Neck
-        cv2.rectangle(canvas, (char_x - 20, char_y + 50), (char_x + 20, char_y + 90), (210, 175, 145), -1)
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        # Head — slightly square jaw
+        cv2.ellipse(canvas, (cx, cy), (62, 78), 0, 0, 360, skin, -1, cv2.LINE_AA)
 
-        # Stylized Head & Warm Skin Tone
-        cv2.ellipse(canvas, (char_x, char_y), (65, 80), 0, 0, 360, (230, 195, 165), -1, cv2.LINE_AA)
+        # Slicked black hair with side part
+        cv2.ellipse(canvas, (cx, cy-44), (70, 52), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx-30, cy-48), (48, 28), 15, 0, 360, hair, -1, cv2.LINE_AA)
 
-        # Modern Hair
-        hair_color = (35, 25, 25)
-        cv2.ellipse(canvas, (char_x, char_y - 42), (74, 55), 0, 180, 360, hair_color, -1, cv2.LINE_AA)
-        cv2.ellipse(canvas, (char_x - 25, char_y - 46), (45, 30), 20, 0, 360, hair_color, -1, cv2.LINE_AA)
+        # Rectangular glasses
+        for ex in [cx-27, cx+27]:
+            cv2.rectangle(canvas, (ex-14, cy-16), (ex+14, cy+2), (30, 30, 30), 2, cv2.LINE_AA)
+        cv2.line(canvas, (cx-13, cy-7), (cx+13, cy-7), (30, 30, 30), 2, cv2.LINE_AA)
 
-        # Headset / Headphones
-        cv2.ellipse(canvas, (char_x - 68, char_y - 5), (14, 28), 0, 0, 360, (50, 50, 50), -1, cv2.LINE_AA)
-        cv2.ellipse(canvas, (char_x + 68, char_y - 5), (14, 28), 0, 0, 360, (50, 50, 50), -1, cv2.LINE_AA)
-        cv2.ellipse(canvas, (char_x, char_y - 30), (70, 75), 0, 180, 360, (60, 60, 60), 4, cv2.LINE_AA)
-        # Microphone boom with blinking status LED
-        cv2.line(canvas, (char_x + 68, char_y), (char_x + 30, char_y + 40), (40, 40, 40), 3, cv2.LINE_AA)
-        mic_led = (60, 255, 100) if lip_sync_energy > 0.05 else (40, 80, 220)
-        cv2.circle(canvas, (char_x + 30, char_y + 40), 5, mic_led, -1, cv2.LINE_AA)
+        # Clipboard prop (right hand)
+        clip_x, clip_y = cx + 68, cy + 90
+        cv2.rectangle(canvas, (clip_x - 18, clip_y - 35), (clip_x + 18, clip_y + 40), (200, 160, 90), -1)
+        cv2.rectangle(canvas, (clip_x - 18, clip_y - 35), (clip_x + 18, clip_y + 40), (120, 80, 30), 2)
+        cv2.rectangle(canvas, (clip_x - 8, clip_y - 40), (clip_x + 8, clip_y - 32), (100, 100, 120), -1)
+        for li in range(4):
+            cv2.line(canvas, (clip_x - 12, clip_y - 20 + li * 12), (clip_x + 12, clip_y - 20 + li * 12),
+                     (80, 80, 80), 1, cv2.LINE_AA)
 
-        # Eyes & Blinking Animation
-        eye_y = char_y - 8
-        eye_left_x = char_x - 26
-        eye_right_x = char_x + 26
-        is_blinking = (frame_idx % 110) < 6
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(80, 50, 40), brow_color=(25, 25, 35))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(60, 60, 220))
+        self._draw_badge(canvas, cx, cy, "ALEX // DATA ANALYST", border_color=(60, 60, 200))
 
-        if is_blinking:
-            cv2.line(canvas, (eye_left_x - 12, eye_y), (eye_left_x + 12, eye_y), (40, 30, 25), 3, cv2.LINE_AA)
-            cv2.line(canvas, (eye_right_x - 12, eye_y), (eye_right_x + 12, eye_y), (40, 30, 25), 3, cv2.LINE_AA)
-        else:
-            # Sclera (White)
-            cv2.ellipse(canvas, (eye_left_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
-            cv2.ellipse(canvas, (eye_right_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
-            # Pupils (glancing toward the left-side interactive visuals)
-            pupil_offset_x = int(math.sin(t * 1.8) * 3) - 4
-            cv2.circle(canvas, (eye_left_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
-            cv2.circle(canvas, (eye_right_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
-            # Specular sparkle reflection
-            cv2.circle(canvas, (eye_left_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
-            cv2.circle(canvas, (eye_right_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
-            # Eyebrows (animating subtly with speech excitement)
-            brow_lift = int(lip_sync_energy * 5)
-            cv2.line(canvas, (eye_left_x - 12, eye_y - 18 - brow_lift), (eye_left_x + 12, eye_y - 19 - brow_lift), (40, 30, 25), 3, cv2.LINE_AA)
-            cv2.line(canvas, (eye_right_x - 12, eye_y - 19 - brow_lift), (eye_right_x + 12, eye_y - 18 - brow_lift), (40, 30, 25), 3, cv2.LINE_AA)
+    def _char_tired_worker(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """WASTE theme — Jordan the Tired Worker: grey tee, coffee mug, dark circles."""
+        bob_y = int(math.sin(t * 2.2) * 4)   # slower, sluggish bob
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (170, 200, 235)   # light skin (BGR)
+        hair = (60, 55, 100)     # messy dishevelled brown
+        shirt = (140, 140, 140)  # faded grey
 
-        # ----------------- TRUE AUDIO-DRIVEN LIP SYNC MOUTH -----------------
-        mouth_y = char_y + 36
-        if lip_sync_energy > 0.04:
-            # Mouth opens dynamically according to volume
-            mouth_open_h = int(3 + lip_sync_energy * 26)
-            mouth_w = int(14 + lip_sync_energy * 7)
-            # Dark oral cavity
-            cv2.ellipse(canvas, (char_x, mouth_y), (mouth_w, mouth_open_h), 0, 0, 360, (30, 20, 120), -1, cv2.LINE_AA)
-            # Upper teeth
-            cv2.ellipse(canvas, (char_x, mouth_y - mouth_open_h + 3), (mouth_w - 4, 3), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
-            # Lower tongue
-            if mouth_open_h > 10:
-                cv2.ellipse(canvas, (char_x, mouth_y + mouth_open_h - 4), (mouth_w - 6, 4), 0, 0, 360, (80, 70, 210), -1, cv2.LINE_AA)
-        else:
-            # Closed mouth with subtle smile curve
-            cv2.ellipse(canvas, (char_x, mouth_y - 2), (14, 5), 0, 0, 180, (40, 30, 25), 3, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
 
-        # ----------------- LIVE AUDIO EQUALIZER BUBBLE -----------------
-        # Animated speech bubble above character's head with 8 bouncing frequency bars
-        bubble_x, bubble_y = char_x - 140, char_y - 150
-        cv2.rectangle(canvas, (bubble_x, bubble_y), (bubble_x + 220, bubble_y + 55), (28, 22, 34), -1)
-        cv2.rectangle(canvas, (bubble_x, bubble_y), (bubble_x + 220, bubble_y + 55), (100, 220, 255), 2, cv2.LINE_AA)
-        # Bubble pointer
+        # Faded grey T-shirt
+        cv2.ellipse(canvas, (cx, cy + 170), (112, 135), 0, 0, 360, shirt, -1, cv2.LINE_AA)
+        cv2.rectangle(canvas, (cx-18, cy+82), (cx+18, cy+120), (160, 160, 160), -1)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=shirt, skin_color=skin)
+
+        # Coffee mug right hand
+        mug_x, mug_y = cx + 65, cy + 115
+        cv2.rectangle(canvas, (mug_x - 16, mug_y - 22), (mug_x + 16, mug_y + 22), (80, 60, 50), -1)
+        cv2.ellipse(canvas, (mug_x + 16, mug_y), (6, 10), 0, 270, 90, (80, 60, 50), 3, cv2.LINE_AA)
+        # Steam wisps
+        for si in range(3):
+            sx = mug_x - 8 + si * 8
+            swy = int(math.sin(t * 4 + si) * 4)
+            cv2.line(canvas, (sx, mug_y - 24), (sx + swy, mug_y - 44), (190, 190, 190), 2, cv2.LINE_AA)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (64, 80), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Messy dishevelled hair — multiple jagged tufts
+        for dx, dy, ang in [(-10, -44, 0), (-25, -50, 15), (5, -46, -10), (20, -48, 8), (-2, -54, 3)]:
+            cv2.ellipse(canvas, (cx + dx, cy + dy), (28, 22), ang, 0, 360, hair, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy-42), (72, 50), 0, 180, 360, hair, -1, cv2.LINE_AA)
+
+        # Dark under-eye bags
+        cv2.ellipse(canvas, (cx-26, cy-2), (14, 5), 0, 0, 180, (80, 90, 130), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx+26, cy-2), (14, 5), 0, 0, 180, (80, 90, 130), -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(60, 50, 40), brow_color=(60, 55, 100))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(140, 140, 200))
+        self._draw_badge(canvas, cx, cy, "JORDAN // OVERWORKED", border_color=(140, 140, 190))
+
+    def _char_coach(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """CALENDAR theme — Sam the Coach: red tracksuit, whistle, sweatband."""
+        bob_y = int(math.sin(t * 4.5) * 10)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (120, 155, 200)   # medium brown (BGR)
+        hair = (35, 55, 80)      # dark ponytail
+        tracksuit = (50, 50, 210)  # red tracksuit
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Red tracksuit body
+        cv2.ellipse(canvas, (cx, cy + 170), (112, 136), 0, 0, 360, tracksuit, -1, cv2.LINE_AA)
+        # White stripes on jacket shoulders
+        cv2.line(canvas, (cx - 90, cy + 100), (cx - 60, cy + 145), (255, 255, 255), 6, cv2.LINE_AA)
+        cv2.line(canvas, (cx + 90, cy + 100), (cx + 60, cy + 145), (255, 255, 255), 6, cv2.LINE_AA)
+        # Collar
+        cv2.fillPoly(canvas, [np.array([[cx-20, cy+82],[cx, cy+130],[cx+20, cy+82]], np.int32)],
+                     (255, 255, 255), cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=tracksuit, skin_color=skin)
+
+        # Whistle on lanyard
+        lanyard_swing = int(math.sin(t * 3) * 8)
+        cv2.line(canvas, (cx, cy+90), (cx - 30 + lanyard_swing, cy + 150), (200, 180, 80), 2, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx - 30 + lanyard_swing, cy + 155), (10, 7), 0, 0, 360, (50, 180, 220), -1, cv2.LINE_AA)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 79), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Sweatband
+        cv2.rectangle(canvas, (cx-66, cy-32), (cx+66, cy-18), (255, 255, 255), -1)
+        cv2.rectangle(canvas, (cx-66, cy-32), (cx+66, cy-18), (50, 50, 200), 2)
+
+        # Ponytail hair
+        cv2.ellipse(canvas, (cx, cy-48), (68, 50), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx+45, cy-10), (18, 45), 20, 0, 360, hair, -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(60, 90, 30), brow_color=(35, 55, 80))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(50, 200, 80))
+        self._draw_badge(canvas, cx, cy, "SAM // PRODUCTIVITY COACH", border_color=(50, 200, 80))
+
+    def _char_hacker(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """TWEAK theme — Zed the Hacker: black hoodie, neon green, thick lens glasses."""
+        bob_y = int(math.sin(t * 3.2) * 6)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (70, 95, 130)    # dark skin (BGR)
+        hoodie = (25, 25, 25)   # black hoodie
+        neon = (20, 240, 80)    # neon green trim
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Black hoodie body
+        cv2.ellipse(canvas, (cx, cy + 168), (115, 140), 0, 0, 360, hoodie, -1, cv2.LINE_AA)
+        # Neon green trim lines on hood
+        cv2.ellipse(canvas, (cx, cy - 40), (76, 58), 0, 180, 360, (35, 35, 35), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy - 40), (76, 58), 0, 180, 360, neon, 2, cv2.LINE_AA)
+        # Neon edge glow
+        neon_alpha = int(abs(math.sin(t * 5)) * 60 + 20)
+        cv2.ellipse(canvas, (cx, cy + 168), (118, 143), 0, 0, 360, neon, 2, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=hoodie, skin_color=skin)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (62, 78), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Short natural hair (under hood)
+        cv2.ellipse(canvas, (cx, cy-44), (68, 50), 0, 180, 360, (20, 20, 20), -1, cv2.LINE_AA)
+
+        # Thick green-lens glasses
+        for ex in [cx-27, cx+27]:
+            cv2.ellipse(canvas, (ex, cy-8), (15, 13), 0, 0, 360, (20, 80, 20), -1, cv2.LINE_AA)
+            cv2.ellipse(canvas, (ex, cy-8), (15, 13), 0, 0, 360, neon, 2, cv2.LINE_AA)
+        cv2.line(canvas, (cx-12, cy-8), (cx+12, cy-8), (40, 40, 40), 2, cv2.LINE_AA)
+
+        # Neon glow halo
+        glow_r = int(abs(math.sin(t * 4)) * 15 + 75)
+        cv2.circle(canvas, (cx, cy), glow_r, neon, 1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(20, 200, 60), brow_color=(20, 20, 20))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy, oral_color=(10, 80, 20))
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=neon, bg_color=(10, 15, 10))
+        self._draw_badge(canvas, cx, cy, "ZED // SYSTEM OPTIMIZER", border_color=neon, bg_color=(10, 15, 10), text_color=neon)
+
+    def _char_speedster(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """INSTANT theme — Kai the Speedster: orange athletic jersey, yellow headband, speed lines."""
+        bob_y = int(math.sin(t * 5.5) * 12)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (130, 170, 210)  # medium (BGR)
+        jersey = (20, 110, 240)  # orange jersey
+        headband = (0, 210, 240) # yellow headband
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Speed lines emanating from character
+        for sl in range(6):
+            angle = sl * 60 + t * 90
+            sx = int(cx + math.cos(math.radians(angle)) * 90)
+            sy = int(cy + math.sin(math.radians(angle)) * 90)
+            ex2 = int(cx + math.cos(math.radians(angle)) * 140)
+            ey2 = int(cy + math.sin(math.radians(angle)) * 140)
+            alpha_line = max(0, int(180 - sl * 25))
+            cv2.line(canvas, (sx, sy), (ex2, ey2), (0, 200, 240), 2, cv2.LINE_AA)
+
+        # Orange athletic jersey
+        cv2.ellipse(canvas, (cx, cy + 168), (112, 136), 0, 0, 360, jersey, -1, cv2.LINE_AA)
+        # Jersey number #5
+        cv2.putText(canvas, "5", (cx - 12, cy + 188), cv2.FONT_HERSHEY_DUPLEX, 1.1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=jersey, skin_color=skin)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 79), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Close-cropped hair
+        cv2.ellipse(canvas, (cx, cy-44), (68, 50), 0, 180, 360, (25, 40, 55), -1, cv2.LINE_AA)
+
+        # Yellow headband
+        cv2.rectangle(canvas, (cx-66, cy-30), (cx+66, cy-14), headband, -1)
+        cv2.rectangle(canvas, (cx-66, cy-30), (cx+66, cy-14), (0, 160, 200), 2)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(20, 130, 220), brow_color=(25, 40, 55))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(0, 200, 240))
+        self._draw_badge(canvas, cx, cy, "KAI // SPEED CHAMPION", border_color=(0, 200, 240))
+
+    def _char_executive(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """EMAIL theme — Morgan the Executive: burgundy blazer, pearl necklace, thin oval glasses."""
+        bob_y = int(math.sin(t * 3.0) * 6)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (185, 210, 240)  # fair (BGR)
+        hair = (35, 30, 28)     # elegant dark bun
+        blazer = (45, 45, 128)  # burgundy
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Burgundy blazer
+        cv2.ellipse(canvas, (cx, cy + 170), (113, 137), 0, 0, 360, blazer, -1, cv2.LINE_AA)
+        # White blouse V
+        cv2.fillPoly(canvas, [np.array([[cx-25, cy+82],[cx, cy+148],[cx+25, cy+82]], np.int32)],
+                     (250, 250, 255), cv2.LINE_AA)
+        # Pearl necklace
+        for pi in range(7):
+            px = cx - 36 + pi * 12
+            cv2.circle(canvas, (px, cy + 80), 5, (230, 230, 230), -1, cv2.LINE_AA)
+            cv2.circle(canvas, (px, cy + 80), 5, (200, 200, 210), 1, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=blazer, skin_color=skin)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (62, 80), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Elegant bun hair
+        cv2.ellipse(canvas, (cx, cy-44), (68, 50), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 35, cy - 52), 18, hair, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 35, cy - 52), 18, (60, 55, 50), 2, cv2.LINE_AA)
+
+        # Thin oval glasses
+        for ex in [cx-26, cx+26]:
+            cv2.ellipse(canvas, (ex, cy-8), (14, 9), 0, 0, 360, (0, 0, 0), 0, cv2.LINE_AA)
+            cv2.ellipse(canvas, (ex, cy-8), (14, 9), 0, 0, 360, (50, 50, 60), 1, cv2.LINE_AA)
+        cv2.line(canvas, (cx-12, cy-8), (cx+12, cy-8), (50, 50, 60), 1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(60, 40, 80), brow_color=(35, 30, 28))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(45, 45, 180))
+        self._draw_badge(canvas, cx, cy, "MORGAN // EXEC DIRECTOR", border_color=(45, 45, 180))
+
+    def _char_influencer(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """SOCIAL theme — Riley the Influencer: purple hoodie, snapback, AirPods."""
+        bob_y = int(math.sin(t * 4.2) * 9)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (150, 185, 225)  # warm (BGR)
+        hair = (50, 60, 80)
+        hoodie = (160, 40, 130) # purple
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Purple oversized hoodie
+        cv2.ellipse(canvas, (cx, cy + 172), (118, 142), 0, 0, 360, hoodie, -1, cv2.LINE_AA)
+        # Kangaroo pocket
+        cv2.rectangle(canvas, (cx-40, cy+155), (cx+40, cy+200), (140, 30, 110), -1)
+        # Lightning bolt patch
+        lbx, lby = cx + 50, cy + 130
         cv2.fillPoly(canvas, [np.array([
-            [bubble_x + 140, bubble_y + 55],
-            [bubble_x + 165, bubble_y + 55],
-            [bubble_x + 130, bubble_y + 75]
-        ], dtype=np.int32)], (28, 22, 34), cv2.LINE_AA)
+            [lbx, lby], [lbx+12, lby+18], [lbx+5, lby+18],
+            [lbx+12, lby+36], [lbx, lby+18], [lbx+7, lby+18]
+        ], np.int32)], (0, 220, 255), cv2.LINE_AA)
 
-        # 8 Bouncing Equalizer Bars
-        for bi in range(8):
-            bar_bx = bubble_x + 20 + bi * 22
-            jitter = math.sin(t * 18 + bi * 1.5) * 6
-            bar_bh = int(max(4, lip_sync_energy * 34 + jitter))
-            bar_col = (60, 240, 120) if bi % 3 == 0 else ((80, 220, 255) if bi % 3 == 1 else (60, 180, 240))
-            cv2.rectangle(canvas, (bar_bx, bubble_y + 44 - bar_bh), (bar_bx + 12, bubble_y + 44), bar_col, -1)
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=hoodie, skin_color=skin)
 
-        # Character Badge / Nameplate
-        badge_y = char_y + 240
-        cv2.rectangle(canvas, (char_x - 90, badge_y - 14), (char_x + 90, badge_y + 14), (20, 25, 35), -1)
-        cv2.rectangle(canvas, (char_x - 90, badge_y - 14), (char_x + 90, badge_y + 14), (60, 150, 240), 1, cv2.LINE_AA)
-        cv2.putText(canvas, "AI PRESENTER // BRIXY", (char_x - 82, badge_y + 5), 
-                    cv2.FONT_HERSHEY_DUPLEX, 0.48, (240, 240, 255), 1, cv2.LINE_AA)
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 79), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Wavy medium hair
+        cv2.ellipse(canvas, (cx, cy-44), (70, 52), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        for wx in [-35, 35]:
+            cv2.ellipse(canvas, (cx+wx, cy+15), (14, 30), 0, 0, 360, hair, -1, cv2.LINE_AA)
+
+        # Backwards snapback cap
+        cv2.ellipse(canvas, (cx, cy-46), (72, 28), 0, 180, 360, (30, 30, 30), -1, cv2.LINE_AA)
+        # Cap brim (backwards)
+        cv2.ellipse(canvas, (cx, cy-46), (72, 12), 0, 0, 180, (20, 20, 20), -1, cv2.LINE_AA)
+
+        # AirPods
+        for ear_x in [cx-68, cx+68]:
+            cv2.ellipse(canvas, (ear_x, cy-5), (7, 12), 0, 0, 360, (230, 230, 230), -1, cv2.LINE_AA)
+            cv2.line(canvas, (ear_x, cy+7), (ear_x, cy+28), (220, 220, 220), 3, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(110, 40, 140), brow_color=(50, 60, 80))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(200, 80, 200))
+        self._draw_badge(canvas, cx, cy, "RILEY // CONTENT CREATOR", border_color=(200, 80, 200))
+
+    def _char_banker(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """FINANCE theme — Victor the Banker: charcoal three-piece suit, gold tie, briefcase."""
+        bob_y = int(math.sin(t * 2.8) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (130, 170, 210)  # tan (BGR)
+        hair = (80, 70, 100)    # slicked-back, silver-tinged
+        suit = (50, 50, 55)     # charcoal
+        gold = (30, 180, 215)   # gold tie
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Charcoal three-piece suit
+        cv2.ellipse(canvas, (cx, cy + 170), (114, 138), 0, 0, 360, suit, -1, cv2.LINE_AA)
+        # Waistcoat (vest)
+        cv2.rectangle(canvas, (cx-32, cy+82), (cx+32, cy+160), (65, 65, 70), -1)
+        # White pocket square
+        cv2.rectangle(canvas, (cx-50, cy+100), (cx-32, cy+120), (240, 240, 250), -1)
+        # Gold tie
+        cv2.fillPoly(canvas, [np.array([[cx-8, cy+88],[cx+8, cy+88],[cx+4, cy+155],[cx-4, cy+155]], np.int32)],
+                     gold, cv2.LINE_AA)
+        # Cufflinks
+        for off in [-1, 1]:
+            cv2.circle(canvas, (cx + off * 80, cy + 145), 6, gold, -1, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=suit, skin_color=skin)
+
+        # Briefcase in right hand
+        bc_x, bc_y = cx + 68, cy + 110
+        cv2.rectangle(canvas, (bc_x - 22, bc_y - 28), (bc_x + 22, bc_y + 28), (50, 80, 100), -1)
+        cv2.rectangle(canvas, (bc_x - 22, bc_y - 28), (bc_x + 22, bc_y + 28), (30, 55, 75), 2)
+        cv2.rectangle(canvas, (bc_x - 10, bc_y - 30), (bc_x + 10, bc_y - 22), (40, 65, 90), -1)
+        cv2.line(canvas, (bc_x - 22, bc_y), (bc_x + 22, bc_y), (30, 55, 75), 2)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (62, 78), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Slicked-back hair, silver temples
+        cv2.ellipse(canvas, (cx, cy-44), (68, 50), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx-55, cy-20), (14, 28), 0, 0, 360, (170, 165, 180), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx+55, cy-20), (14, 28), 0, 0, 360, (170, 165, 180), -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(50, 65, 40), brow_color=(80, 70, 100))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=gold)
+        self._draw_badge(canvas, cx, cy, "VICTOR // FINANCE DIRECTOR", border_color=gold)
+
+    def _char_engineer(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """TECH theme — Dev the Engineer: blue hoodie, round thick glasses, DEV lanyard badge."""
+        bob_y = int(math.sin(t * 3.6) * 7)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (120, 155, 190)  # warm (BGR)
+        hair = (25, 30, 45)     # shaggy dark
+        hoodie = (180, 100, 40) # blue hoodie
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Blue dev hoodie body
+        cv2.ellipse(canvas, (cx, cy + 170), (113, 137), 0, 0, 360, hoodie, -1, cv2.LINE_AA)
+        # Kangaroo pocket
+        cv2.rectangle(canvas, (cx-42, cy+155), (cx+42, cy+200), (160, 85, 30), -1)
+        # Hood outline
+        cv2.ellipse(canvas, (cx, cy-42), (75, 56), 0, 180, 360, (165, 90, 32), -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy-42), (75, 56), 0, 180, 360, (140, 75, 25), 2, cv2.LINE_AA)
+
+        # DEV lanyard badge hanging from neck
+        swing = int(math.sin(t * 2.5) * 10)
+        lany_x = cx - 10 + swing
+        cv2.line(canvas, (cx, cy+90), (lany_x, cy + 148), (180, 50, 50), 2, cv2.LINE_AA)
+        cv2.rectangle(canvas, (lany_x - 20, cy + 148), (lany_x + 20, cy + 175), (240, 240, 255), -1)
+        cv2.rectangle(canvas, (lany_x - 20, cy + 148), (lany_x + 20, cy + 175), (80, 80, 200), 1)
+        cv2.putText(canvas, "DEV", (lany_x - 14, cy + 168), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (30, 30, 180), 1, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=hoodie, skin_color=skin)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 79), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Shaggy dark hair
+        cv2.ellipse(canvas, (cx, cy-44), (70, 52), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        for dx in [-25, 0, 25]:
+            cv2.ellipse(canvas, (cx+dx, cy-58), (22, 18), dx//5, 0, 360, hair, -1, cv2.LINE_AA)
+
+        # Round thick glasses
+        for ex in [cx-27, cx+27]:
+            cv2.circle(canvas, (ex, cy-8), 14, (50, 50, 50), 0, cv2.LINE_AA)
+            cv2.circle(canvas, (ex, cy-8), 14, (35, 35, 40), 3, cv2.LINE_AA)
+        cv2.line(canvas, (cx-13, cy-8), (cx+13, cy-8), (35, 35, 40), 2, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(180, 120, 30), brow_color=(25, 30, 45))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=hoodie)
+        self._draw_badge(canvas, cx, cy, "DEV // SENIOR ENGINEER", border_color=hoodie)
+
+    def _char_diplomat(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """TRUST theme — Priya the Diplomat: navy smart-casual blazer, flag pin."""
+        bob_y = int(math.sin(t * 3.1) * 6)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (110, 155, 200)  # South-Asian warm (BGR)
+        hair = (20, 20, 28)     # professional medium dark
+        blazer = (110, 60, 30)  # navy blazer
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Navy blazer body
+        cv2.ellipse(canvas, (cx, cy + 170), (113, 137), 0, 0, 360, blazer, -1, cv2.LINE_AA)
+        # Light blue open-collar shirt
+        cv2.fillPoly(canvas, [np.array([[cx-22, cy+82],[cx, cy+145],[cx+22, cy+82]], np.int32)],
+                     (200, 170, 130), cv2.LINE_AA)
+
+        # Flag pin on lapel (small tricolor)
+        fp_x, fp_y = cx - 50, cy + 106
+        for pi, col in enumerate([(50, 50, 230), (245, 245, 245), (30, 130, 30)]):
+            cv2.rectangle(canvas, (fp_x, fp_y + pi * 6), (fp_x + 22, fp_y + pi * 6 + 6), col, -1)
+        cv2.rectangle(canvas, (fp_x, fp_y), (fp_x + 22, fp_y + 18), (80, 80, 80), 1)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=blazer, skin_color=skin)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 80), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Professional medium-length hair
+        cv2.ellipse(canvas, (cx, cy-44), (70, 52), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        for wx in [-38, 38]:
+            cv2.ellipse(canvas, (cx+wx, cy+8), (16, 34), 0, 0, 360, hair, -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(60, 50, 35), brow_color=(20, 20, 28))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(80, 130, 200))
+        self._draw_badge(canvas, cx, cy, "PRIYA // TRUST AMBASSADOR", border_color=(80, 130, 200))
+
+    def _char_artist(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """CREATIVE theme — Milo the Artist: paint-splattered smock, purple beret, paintbrush."""
+        bob_y = int(math.sin(t * 3.4) * 8)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        skin = (190, 215, 245)  # fair (BGR)
+        hair = (60, 80, 160)    # long auburn hair
+        smock = (240, 245, 252) # white smock
+        beret = (160, 40, 120)  # purple beret
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # White paint-splattered smock
+        cv2.ellipse(canvas, (cx, cy + 170), (114, 138), 0, 0, 360, smock, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy + 170), (114, 138), 0, 0, 360, (200, 210, 220), 2, cv2.LINE_AA)
+        # Paint splatters on smock
+        splat_colors = [(40, 40, 230), (20, 180, 50), (0, 100, 240), (200, 30, 200), (0, 200, 240)]
+        rng_state = 42
+        for idx, sc in enumerate(splat_colors):
+            rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
+            sx = cx - 80 + (rng_state % 160)
+            rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
+            sy = cy + 100 + (rng_state % 90)
+            rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
+            sr = 4 + (rng_state % 8)
+            cv2.circle(canvas, (sx, sy), sr, sc, -1, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=(220, 225, 235), skin_color=skin)
+
+        # Paintbrush prop held in gesture direction
+        brush_angle = t * 40
+        bx = int(cx - 130 + math.cos(t * 3.5) * 16)
+        by = int(cy + 35 + math.sin(t * 3.5) * 20)
+        brush_end_x = bx - 40
+        brush_end_y = by - 20
+        cv2.line(canvas, (bx, by), (brush_end_x, brush_end_y), (140, 100, 60), 4, cv2.LINE_AA)
+        cv2.ellipse(canvas, (brush_end_x, brush_end_y), (6, 4), 0, 0, 360, (0, 100, 240), -1, cv2.LINE_AA)
+
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), skin, -1)
+        cv2.ellipse(canvas, (cx, cy), (63, 80), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Long auburn flowing hair
+        cv2.ellipse(canvas, (cx, cy-44), (70, 52), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        for wx in [-40, 40]:
+            cv2.ellipse(canvas, (cx+wx, cy+20), (18, 50), 0, 0, 360, hair, -1, cv2.LINE_AA)
+
+        # Purple beret
+        cv2.ellipse(canvas, (cx - 8, cy - 54), (58, 22), 0, 0, 360, beret, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx - 8, cy - 54), (58, 22), 0, 0, 360, (130, 25, 95), 2, cv2.LINE_AA)
+        # Beret bobble
+        cv2.circle(canvas, (cx + 35, cy - 64), 6, (200, 80, 170), -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy, t, frame_idx, lip_sync_energy, pupil_color=(160, 60, 80), brow_color=(60, 80, 160))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=beret)
+        self._draw_badge(canvas, cx, cy, "MILO // CREATIVE DIRECTOR", border_color=beret)
+
+
 
     async def fetch_pexels_clip(self, query: str, duration: float) -> Optional[FootageClip]:
         """Queries Pexels stock video API with commercial license tracking."""
