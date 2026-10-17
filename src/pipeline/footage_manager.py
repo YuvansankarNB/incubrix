@@ -3,6 +3,7 @@ import hashlib
 import json
 import math
 import random
+import subprocess
 import urllib.parse
 import urllib.request
 import numpy as np
@@ -55,237 +56,750 @@ class FootageManager:
         self.cache_dir = Path("./data/footage_cache")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.used_clip_ids: set = set()
+        self._audio_cache: Dict[str, np.ndarray] = {}
 
     def reset_used_clips(self):
         self.used_clip_ids.clear()
+        self._audio_cache.clear()
 
-    def generate_procedural_broll(self, query: str, duration: float, output_path: Path, style: str) -> FootageClip:
+    def _load_pcm_audio(self, audio_path: Optional[Path]) -> np.ndarray:
+        """Extracts 16kHz mono raw PCM samples to drive true audio-synced lip sync."""
+        if not audio_path or not audio_path.exists():
+            return np.array([], dtype=np.int16)
+        
+        path_str = str(audio_path.resolve())
+        if path_str in self._audio_cache:
+            return self._audio_cache[path_str]
+
+        try:
+            cmd = [
+                FFMPEG_EXE, "-i", path_str,
+                "-f", "s16le", "-ac", "1", "-ar", "16000", "-"
+            ]
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            raw, _ = p.communicate()
+            samples = np.frombuffer(raw, dtype=np.int16)
+            self._audio_cache[path_str] = samples
+            return samples
+        except Exception as e:
+            logger.warning(f"Could not extract PCM audio for lip sync: {e}")
+            return np.array([], dtype=np.int16)
+
+    def _draw_cursor(self, canvas: np.ndarray, x: int, y: int, clicking: bool = False, click_progress: float = 0.0):
+        """Renders a sleek, modern OS mouse pointer with smooth hover and click ripples."""
+        pts = np.array([
+            [x, y],
+            [x, y + 26],
+            [x + 7, y + 20],
+            [x + 14, y + 30],
+            [x + 19, y + 28],
+            [x + 12, y + 18],
+            [x + 21, y + 18]
+        ], dtype=np.int32)
+        
+        # Shadow
+        cv2.fillPoly(canvas, [pts + 3], (10, 10, 10), cv2.LINE_AA)
+        # White pointer body
+        cv2.fillPoly(canvas, [pts], (255, 255, 255), cv2.LINE_AA)
+        # Dark border
+        cv2.polylines(canvas, [pts], True, (25, 25, 25), 2, cv2.LINE_AA)
+
+        if clicking and 0.0 <= click_progress <= 1.0:
+            # Concentric expanding ripple rings
+            ripple_r = int(10 + click_progress * 40)
+            alpha = max(0.0, 1.0 - click_progress)
+            color = (int(80 * alpha), int(220 * alpha), int(255 * alpha))
+            cv2.circle(canvas, (x, y), ripple_r, color, 2, cv2.LINE_AA)
+            cv2.circle(canvas, (x, y), max(4, int(ripple_r * 0.55)), color, 1, cv2.LINE_AA)
+
+    def generate_procedural_broll(
+        self,
+        query: str,
+        duration: float,
+        output_path: Path,
+        style: str,
+        audio_path: Optional[Path] = None,
+        start_time: float = 0.0,
+        scene_text: str = ""
+    ) -> FootageClip:
         """
-        Synthesizes high-definition, dynamic motion graphics B-roll video clips.
-        Tailored themes:
-        1. Financial & Analytics (Upward line chart, ascending candlesticks, growth indicators)
-        2. High-Tech Cloud & Network (3D perspective grid, server nodes, pulse packets)
-        3. Partnership & Trust (Constellation particle network, golden geometric rings)
-        4. Dynamic Creative Waves (Layered light streaks, orbiting kinetic particles)
+        Synthesizes high-impact, content-driven animated B-roll clips:
+        - 11 Content-Specific Interactive Motion Themes with live counters, widgets, and checklists.
+        - Animated Mouse Pointer with simulated user clicks and expanding ripple waves.
+        - Authentic 16kHz Audio-Driven Lip Sync matching spoken volume and pauses.
+        - Animated Host Presenter 'Brixy' with blinking eyes, pupil tracking, and 8-bar equalizer bubble.
         """
         output_path.parent.mkdir(parents=True, exist_ok=True)
         width, height = 1920, 1080
         fps = 30
         total_frames = int(max(duration, 2.0) * fps)
         
-        q_lower = query.lower()
-        q_hash = int(hashlib.md5(query.encode('utf-8')).hexdigest(), 16)
+        combined_text = f"{scene_text} {query}".lower()
+        q_hash = int(hashlib.md5(combined_text.encode('utf-8')).hexdigest(), 16)
         random.seed(q_hash % 100000)
 
-        # Detect semantic theme
-        is_finance = any(w in q_lower for w in ["finance", "financial", "growth", "sale", "sales", "40%", "bank", "money", "invest", "yield", "profit", "market", "revenue"])
-        is_tech = any(w in q_lower for w in ["cloud", "server", "data", "compute", "code", "python", "software", "cluster", "backup", "cyber", "network", "devops"])
-        is_trust = any(w in q_lower for w in ["trust", "partner", "team", "relation", "slowly", "faith", "collab", "together"])
+        # Detect semantic theme with high-specificity precedence
+        if any(w in combined_text for w in ["tweak", "lock in", "focus", "quick move"]):
+            theme_mode = "tweak"
+            theme_title = "Hyper-Focus Mode Optimization"
+        elif any(w in combined_text for w in ["second", "seconds", "instant", "instantly", "fixes", "5 sec"]):
+            theme_mode = "instant"
+            theme_title = "5-Second Instant Resolution"
+        elif any(w in combined_text for w in ["comment", "comments", "drop a yes", "say yes"]):
+            theme_mode = "social"
+            theme_title = "Social Engagement Feed"
+        elif any(w in combined_text for w in ["inbox", "email", "breakdown sent"]):
+            theme_mode = "email"
+            theme_title = "Blueprint Inbox Delivery"
+        elif any(w in combined_text for w in ["waste", "wastes", "ruin", "ruins", "drain"]):
+            theme_mode = "waste"
+            theme_title = "Time Waste & Friction Analysis"
+        elif any(w in combined_text for w in ["mistake", "routine", "daily habit", "warning", "wrong"]):
+            theme_mode = "warning"
+            theme_title = "Daily Routine Workflow Audit"
+        elif any(w in combined_text for w in ["week", "calendar", "sprint", "days", "timeline"]):
+            theme_mode = "calendar"
+            theme_title = "7-Day Sprint Acceleration"
+        elif any(w in combined_text for w in ["finance", "financial", "growth", "sale", "sales", "40%", "bank", "money", "invest", "yield", "profit", "revenue", "dollar"]):
+            theme_mode = "finance"
+            theme_title = "Revenue Surge Analytics"
+        elif any(w in combined_text for w in ["cloud", "server", "data", "compute", "code", "python", "software", "cluster", "backup", "cyber", "network", "devops"]):
+            theme_mode = "tech"
+            theme_title = "Cloud Cluster Deployment"
+        elif any(w in combined_text for w in ["trust", "partner", "partnership", "team", "relation", "faith", "collab", "together"]):
+            theme_mode = "trust"
+            theme_title = "Partnership Trust Alliance"
+        else:
+            theme_mode = "creative"
+            theme_title = "Kinetic Motion Synthesis"
+
+        # Load PCM audio for authentic lip-sync
+        pcm_samples = self._load_pcm_audio(audio_path)
 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         raw_temp = output_path.with_suffix(".raw.mp4")
         writer = cv2.VideoWriter(str(raw_temp), fourcc, fps, (width, height))
 
-        # Pre-generate particles for constellation/network
-        num_particles = 45
+        # Floating ambient particles
         particles = [
             {
-                "x": random.uniform(100, width - 100),
-                "y": random.uniform(100, height - 100),
-                "vx": random.uniform(-1.5, 1.5),
-                "vy": random.uniform(-1.5, 1.5),
-                "radius": random.randint(3, 7)
+                "x": random.uniform(80, width * 0.72),
+                "y": random.uniform(80, height - 80),
+                "vx": random.uniform(-1.0, 1.0),
+                "vy": random.uniform(-1.0, 1.0),
+                "radius": random.randint(3, 6)
             }
-            for _ in range(num_particles)
+            for _ in range(30)
         ]
 
-        # Financial curve keypoints
-        num_points = 14
+        # Financial chart points
+        num_pts = 16
         chart_points = []
-        base_y = height * 0.75
-        for i in range(num_points):
-            px = int(width * 0.12 + (i / (num_points - 1)) * (width * 0.76))
-            # Upward trending with minor fluctuations
-            fluctuation = random.uniform(-40, 30)
-            py = int(base_y - (i / (num_points - 1)) * (height * 0.45) + fluctuation)
+        base_y = height * 0.76
+        for i in range(num_pts):
+            px = int(width * 0.08 + (i / (num_pts - 1)) * (width * 0.62))
+            fluctuation = math.sin(i * 1.5) * 35 + random.uniform(-20, 20)
+            py = int(base_y - (i / (num_pts - 1)) * (height * 0.44) + fluctuation)
             chart_points.append((px, py))
 
         for frame_idx in range(total_frames):
             progress = frame_idx / total_frames
             t = frame_idx / fps
+            global_audio_t = start_time + t
+
+            # ----------------- REAL AUDIO-DRIVEN LIP SYNC ENVELOPE -----------------
+            lip_sync_energy = 0.0
+            if len(pcm_samples) > 0:
+                sample_idx = int(global_audio_t * 16000)
+                w_start = max(0, sample_idx - 400)
+                w_end = min(len(pcm_samples), sample_idx + 400)
+                if w_end > w_start:
+                    rms = float(np.sqrt(np.mean(pcm_samples[w_start:w_end].astype(np.float32)**2)))
+                    # Speech RMS typically sits between 300 and 5000
+                    lip_sync_energy = np.clip((rms - 250.0) / 2600.0, 0.0, 1.0)
+            else:
+                lip_sync_energy = max(0.0, math.sin(t * 12) * 0.7)
+
             canvas = np.zeros((height, width, 3), dtype=np.uint8)
 
-            if is_finance:
-                # ----------------- THEME 1: FINANCIAL GROWTH & ANALYTICS -----------------
-                # Sleek dark navy slate background
-                canvas[:] = (18, 14, 10)
+            # Interactive Cursor Path Calculation
+            # In each scene, cursor moves from start_pos to target_pos and clicks around t = 1.4s
+            cursor_active = True
+            cursor_start = (int(width * 0.15), int(height * 0.85))
+            cursor_target = (int(width * 0.48), int(height * 0.42))
+            click_time = 1.4
+            
+            # ----------------- THEME 1: WARNING & ROUTINE AUDIT -----------------
+            if theme_mode == "warning":
+                canvas[:] = (24, 20, 28)
+                cursor_target = (int(width * 0.46), int(height * 0.38))
                 
-                # Subtle background coordinate grid
-                for gx in range(0, width, 120):
-                    cv2.line(canvas, (gx, 0), (gx, height), (35, 28, 20), 1)
-                for gy in range(0, height, 90):
-                    cv2.line(canvas, (0, gy), (width, gy), (35, 28, 20), 1)
+                # Ambient warning grid
+                for gx in range(0, int(width * 0.74), 90):
+                    cv2.line(canvas, (gx, 0), (gx, height), (36, 28, 38), 1)
+                for gy in range(0, height, 75):
+                    cv2.line(canvas, (0, gy), (int(width * 0.74), gy), (36, 28, 38), 1)
 
-                # Animated candlestick pillars in background
+                # Warning Shield / Hazard Triangle at Top Left
+                tri_c = (int(width * 0.12), int(height * 0.14))
+                pulse = math.sin(t * 6) * 4
+                tri_pts = np.array([
+                    [tri_c[0], int(tri_c[1] - 30 - pulse)],
+                    [int(tri_c[0] - 32 - pulse), int(tri_c[1] + 24)],
+                    [int(tri_c[0] + 32 + pulse), int(tri_c[1] + 24)]
+                ], dtype=np.int32)
+                cv2.fillPoly(canvas, [tri_pts], (30, 180, 240), cv2.LINE_AA)
+                cv2.polylines(canvas, [tri_pts], True, (50, 220, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "!", (tri_c[0] - 6, tri_c[1] + 16), cv2.FONT_HERSHEY_DUPLEX, 1.2, (15, 15, 15), 3, cv2.LINE_AA)
+
+                # Top Alert Banner
+                cv2.rectangle(canvas, (int(width * 0.16), int(height * 0.09)), (int(width * 0.68), int(height * 0.19)), (35, 24, 38), -1)
+                cv2.rectangle(canvas, (int(width * 0.16), int(height * 0.09)), (int(width * 0.68), int(height * 0.19)), (50, 160, 240), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "CRITICAL ROUTINE BOTTLENECK DETECTED", (int(width * 0.18), int(height * 0.15)), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.85, (50, 210, 255), 2, cv2.LINE_AA)
+
+                # Interactive Checklist Card
+                card_x, card_y, card_w, card_h = int(width * 0.08), int(height * 0.23), int(width * 0.58), 440
+                cv2.rectangle(canvas, (card_x, card_y), (card_x + card_w, card_y + card_h), (28, 22, 34), -1)
+                cv2.rectangle(canvas, (card_x, card_y), (card_x + card_w, card_y + card_h), (80, 60, 90), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "DAILY EXECUTION SCHEDULE // AUDIT LOG", (card_x + 28, card_y + 44), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.72, (220, 220, 220), 2, cv2.LINE_AA)
+
+                # Task 1: Good Habit
+                t1_y = card_y + 110
+                cv2.rectangle(canvas, (card_x + 28, t1_y - 28), (card_x + card_w - 28, t1_y + 28), (34, 30, 42), -1)
+                cv2.line(canvas, (card_x + 44, t1_y), (card_x + 54, t1_y + 12), (60, 240, 100), 3, cv2.LINE_AA)
+                cv2.line(canvas, (card_x + 54, t1_y + 12), (card_x + 72, t1_y - 10), (60, 240, 100), 3, cv2.LINE_AA)
+                cv2.putText(canvas, "07:00 AM  Daily Plan & High-Priority Objectives", (card_x + 90, t1_y + 8), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.62, (180, 240, 180), 2, cv2.LINE_AA)
+
+                # Task 2: Fatal Mistake (Pulsing Red)
+                t2_y = card_y + 195
+                is_clicked = t >= click_time
+                mistake_bg = (45, 25, 30) if not is_clicked else (25, 45, 30)
+                mistake_border = (50, 50, 230) if not is_clicked else (60, 240, 100)
+                cv2.rectangle(canvas, (card_x + 28, t2_y - 32), (card_x + card_w - 28, t2_y + 32), mistake_bg, -1)
+                cv2.rectangle(canvas, (card_x + 28, t2_y - 32), (card_x + card_w - 28, t2_y + 32), mistake_border, 2, cv2.LINE_AA)
+                
+                if not is_clicked:
+                    # Red cross
+                    cv2.line(canvas, (card_x + 48, t2_y - 12), (card_x + 68, t2_y + 12), (50, 50, 240), 3, cv2.LINE_AA)
+                    cv2.line(canvas, (card_x + 68, t2_y - 12), (card_x + 48, t2_y + 12), (50, 50, 240), 3, cv2.LINE_AA)
+                    cv2.putText(canvas, "08:30 AM  THE ONE BIG MISTAKE: Unfocused Context Switching", (card_x + 90, t2_y + 8), 
+                                cv2.FONT_HERSHEY_DUPLEX, 0.60, (90, 110, 255), 2, cv2.LINE_AA)
+                else:
+                    # Replaced with Green fix
+                    cv2.line(canvas, (card_x + 44, t2_y), (card_x + 54, t2_y + 12), (60, 240, 100), 3, cv2.LINE_AA)
+                    cv2.line(canvas, (card_x + 54, t2_y + 12), (card_x + 72, t2_y - 10), (60, 240, 100), 3, cv2.LINE_AA)
+                    cv2.putText(canvas, "08:30 AM  [OPTIMIZED] Single-Task Deep Execution Engaged", (card_x + 90, t2_y + 8), 
+                                cv2.FONT_HERSHEY_DUPLEX, 0.60, (100, 255, 140), 2, cv2.LINE_AA)
+
+                # Task 3: Outcome
+                t3_y = card_y + 280
+                cv2.rectangle(canvas, (card_x + 28, t3_y - 28), (card_x + card_w - 28, t3_y + 28), (34, 30, 42), -1)
+                cv2.circle(canvas, (card_x + 58, t3_y), 8, (240, 180, 50), -1, cv2.LINE_AA)
+                cv2.putText(canvas, "09:00 AM  Output Velocity Scaled 4x with Zero Drag", (card_x + 90, t3_y + 8), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.62, (200, 220, 255), 2, cv2.LINE_AA)
+
+                # Status Footer in Card
+                cv2.rectangle(canvas, (card_x + 28, card_y + 350), (card_x + card_w - 28, card_y + 400), (22, 18, 28), -1)
+                status_txt = "ACTION REQUIRED: CLICK TO ELIMINATE ROUTINE DRAG" if not is_clicked else "STATUS: BOTTLENECK ELIMINATED SUCCESSFULLY"
+                cv2.putText(canvas, status_txt, (card_x + 48, card_y + 382), cv2.FONT_HERSHEY_DUPLEX, 0.58, 
+                            (60, 200, 240) if not is_clicked else (80, 255, 130), 2, cv2.LINE_AA)
+
+            # ----------------- THEME 2: TIME WASTE & FRICTION -----------------
+            elif theme_mode == "waste":
+                canvas[:] = (22, 16, 26)
+                cursor_target = (int(width * 0.44), int(height * 0.55))
+
+                # Digital Stopwatch Card
+                sw_x, sw_y = int(width * 0.08), int(height * 0.12)
+                cv2.rectangle(canvas, (sw_x, sw_y), (sw_x + 480, sw_y + 190), (32, 22, 36), -1)
+                cv2.rectangle(canvas, (sw_x, sw_y), (sw_x + 480, sw_y + 190), (60, 50, 220), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "CHRONIC TIME LEAKAGE", (sw_x + 24, sw_y + 40), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.68, (180, 180, 200), 2, cv2.LINE_AA)
+                
+                # Fast counting stopwatch
+                wasted_mins = min(88, int(progress * 65) + 24)
+                wasted_secs = int((t * 45) % 60)
+                cv2.putText(canvas, f"00:{wasted_mins:02d}:{wasted_secs:02d}", (sw_x + 24, sw_y + 120), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1.8, (50, 70, 255), 3, cv2.LINE_AA)
+                cv2.putText(canvas, "HOURS LOST TO INEFFICIENCY", (sw_x + 24, sw_y + 160), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.54, (140, 140, 180), 1, cv2.LINE_AA)
+
+                # Animated Hourglass with Falling Sand
+                hg_cx, hg_cy = int(width * 0.45), int(height * 0.28)
+                # Funnel outlines
+                cv2.line(canvas, (hg_cx - 50, hg_cy - 75), (hg_cx + 50, hg_cy - 75), (200, 200, 200), 3, cv2.LINE_AA) # top lid
+                cv2.line(canvas, (hg_cx - 50, hg_cy + 75), (hg_cx + 50, hg_cy + 75), (200, 200, 200), 3, cv2.LINE_AA) # bottom lid
+                cv2.line(canvas, (hg_cx - 50, hg_cy - 75), (hg_cx, hg_cy), (160, 160, 160), 2, cv2.LINE_AA)
+                cv2.line(canvas, (hg_cx + 50, hg_cy - 75), (hg_cx, hg_cy), (160, 160, 160), 2, cv2.LINE_AA)
+                cv2.line(canvas, (hg_cx, hg_cy), (hg_cx - 50, hg_cy + 75), (160, 160, 160), 2, cv2.LINE_AA)
+                cv2.line(canvas, (hg_cx, hg_cy), (hg_cx + 50, hg_cy + 75), (160, 160, 160), 2, cv2.LINE_AA)
+                
+                # Falling sand particles
+                for si in range(8):
+                    sand_y = int(hg_cy + ((t * 80 + si * 18) % 70))
+                    sand_x = hg_cx + int(math.sin(t * 10 + si) * 3)
+                    cv2.circle(canvas, (sand_x, sand_y), 2, (60, 200, 255), -1, cv2.LINE_AA)
+                # Accumulated sand mound in bottom bulb
+                mound_h = int(12 + progress * 32)
+                cv2.fillPoly(canvas, [np.array([
+                    [hg_cx - 38, hg_cy + 73],
+                    [hg_cx + 38, hg_cy + 73],
+                    [hg_cx, hg_cy + 73 - mound_h]
+                ], dtype=np.int32)], (50, 190, 240), cv2.LINE_AA)
+
+                # Draining Battery Gauge (Card 2)
+                bat_x, bat_y = int(width * 0.08), int(height * 0.44)
+                cv2.rectangle(canvas, (bat_x, bat_y), (bat_x + 580, bat_y + 190), (32, 22, 36), -1)
+                cv2.rectangle(canvas, (bat_x, bat_y), (bat_x + 580, bat_y + 190), (80, 60, 90), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "ENERGY DRAIN & FRICTION IMPACT", (bat_x + 24, bat_y + 40), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.68, (220, 220, 220), 2, cv2.LINE_AA)
+                
+                # Battery Shell
+                cv2.rectangle(canvas, (bat_x + 24, bat_y + 65), (bat_x + 360, bat_y + 125), (60, 60, 70), 2, cv2.LINE_AA)
+                cv2.rectangle(canvas, (bat_x + 360, bat_y + 85), (bat_x + 372, bat_y + 105), (60, 60, 70), -1)
+                
+                # Draining fill: 80% down to 15%
+                bat_pct = max(0.12, 0.85 - progress * 0.72)
+                fill_w = int(330 * bat_pct)
+                bat_col = (50, 50, 240) if bat_pct < 0.28 else (40, 180, 240)
+                cv2.rectangle(canvas, (bat_x + 28, bat_y + 70), (bat_x + 28 + fill_w, bat_y + 120), bat_col, -1)
+                cv2.putText(canvas, f"REMAINING: {int(bat_pct*100)}%", (bat_x + 390, bat_y + 102), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.75, bat_col, 2, cv2.LINE_AA)
+                cv2.putText(canvas, "ALERT: SEVERE PERFORMANCE DEGRADATION", (bat_x + 24, bat_y + 162), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.54, (80, 90, 255), 1, cv2.LINE_AA)
+
+            # ----------------- THEME 3: 7-DAY SPRINT ACCELERATION -----------------
+            elif theme_mode == "calendar":
+                canvas[:] = (28, 20, 18)
+                cursor_target = (int(width * 0.52), int(height * 0.38))
+
+                # Header
+                cv2.putText(canvas, "THE 7-DAY ACCELERATED BLUEPRINT", (int(width * 0.08), int(height * 0.12)), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1.1, (240, 220, 200), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "TRANSFORM YOUR RESULTS IN UNDER A WEEK INSTEAD OF MONTHS", 
+                            (int(width * 0.08), int(height * 0.17)), cv2.FONT_HERSHEY_SIMPLEX, 0.62, (180, 160, 150), 1, cv2.LINE_AA)
+
+                # 7-Day Timeline Strips
+                days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+                start_x = int(width * 0.08)
+                day_w = 110
+                gap = 22
+                for d_idx, day_name in enumerate(days):
+                    dx = start_x + d_idx * (day_w + gap)
+                    dy = int(height * 0.24)
+                    is_past = progress >= (d_idx / 7.0)
+                    is_active = (d_idx == int(progress * 7.0))
+                    
+                    bg_col = (45, 80, 30) if is_past else ((35, 30, 42) if not is_active else (30, 120, 200))
+                    border_col = (60, 240, 100) if is_past else ((70, 60, 80) if not is_active else (50, 220, 255))
+                    
+                    cv2.rectangle(canvas, (dx, dy), (dx + day_w, dy + 180), bg_col, -1)
+                    cv2.rectangle(canvas, (dx, dy), (dx + day_w, dy + 180), border_col, 2, cv2.LINE_AA)
+                    cv2.putText(canvas, day_name, (dx + 24, dy + 42), cv2.FONT_HERSHEY_DUPLEX, 0.72, (255, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(canvas, f"0{d_idx+1}", (dx + 30, dy + 95), cv2.FONT_HERSHEY_DUPLEX, 0.95, (220, 220, 220), 2, cv2.LINE_AA)
+                    
+                    if is_past:
+                        # Green checkmark
+                        cv2.line(canvas, (dx + 35, dy + 135), (dx + 48, dy + 150), (60, 255, 120), 3, cv2.LINE_AA)
+                        cv2.line(canvas, (dx + 48, dy + 150), (dx + 75, dy + 125), (60, 255, 120), 3, cv2.LINE_AA)
+                    else:
+                        cv2.circle(canvas, (dx + 55, dy + 140), 10, (100, 90, 110), 2, cv2.LINE_AA)
+
+                # Fast Flipping Calendar Card (Right side of graphic area)
+                cal_x, cal_y = int(width * 0.08), int(height * 0.52)
+                cv2.rectangle(canvas, (cal_x, cal_y), (cal_x + 580, cal_y + 160), (35, 26, 24), -1)
+                cv2.rectangle(canvas, (cal_x, cal_y), (cal_x + 580, cal_y + 160), (60, 180, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, ">>> ACCELERATED VELOCITY: +450% TIMELINE COMPRESSION", 
+                            (cal_x + 28, cal_y + 55), cv2.FONT_HERSHEY_DUPLEX, 0.65, (60, 220, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "Full results unlocked within Day 7 with zero backlog", 
+                            (cal_x + 28, cal_y + 105), cv2.FONT_HERSHEY_SIMPLEX, 0.62, (200, 200, 200), 1, cv2.LINE_AA)
+
+            # ----------------- THEME 4: FAST TWEAK & FOCUS LOCK -----------------
+            elif theme_mode == "tweak":
+                canvas[:] = (20, 24, 18)
+                cursor_target = (int(width * 0.42), int(height * 0.38))
+
+                # Cybernetic Sniper Crosshairs
+                ret_cx, ret_cy = int(width * 0.18), int(height * 0.38)
+                rot_ang = t * 1.8
+                # Rotating outer tick ring
+                cv2.circle(canvas, (ret_cx, ret_cy), 95, (40, 140, 60), 2, cv2.LINE_AA)
+                for ai in range(8):
+                    ang = rot_ang + ai * (math.pi / 4)
+                    p1 = (int(ret_cx + 90 * math.cos(ang)), int(ret_cy + 90 * math.sin(ang)))
+                    p2 = (int(ret_cx + 105 * math.cos(ang)), int(ret_cy + 105 * math.sin(ang)))
+                    cv2.line(canvas, p1, p2, (60, 220, 90), 2, cv2.LINE_AA)
+                # Crosshair lines
+                cv2.line(canvas, (ret_cx - 110, ret_cy), (ret_cx - 30, ret_cy), (60, 220, 90), 2, cv2.LINE_AA)
+                cv2.line(canvas, (ret_cx + 30, ret_cy), (ret_cx + 110, ret_cy), (60, 220, 90), 2, cv2.LINE_AA)
+                cv2.line(canvas, (ret_cx, ret_cy - 110), (ret_cx, ret_cy - 30), (60, 220, 90), 2, cv2.LINE_AA)
+                cv2.line(canvas, (ret_cx, ret_cy + 30), (ret_cx, ret_cy + 110), (60, 220, 90), 2, cv2.LINE_AA)
+                cv2.circle(canvas, (ret_cx, ret_cy), 8, (60, 255, 120), -1, cv2.LINE_AA)
+                cv2.putText(canvas, "[LOCK: ACQUIRED]", (ret_cx - 65, ret_cy + 130), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.54, (80, 255, 130), 1, cv2.LINE_AA)
+
+                # Interactive Focus Switch Card
+                sw_x, sw_y, sw_w, sw_h = int(width * 0.30), int(height * 0.20), 480, 360
+                cv2.rectangle(canvas, (sw_x, sw_y), (sw_x + sw_w, sw_y + sw_h), (25, 30, 24), -1)
+                cv2.rectangle(canvas, (sw_x, sw_y), (sw_x + sw_w, sw_y + sw_h), (60, 160, 80), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "MODE RECONFIGURATION", (sw_x + 28, sw_y + 44), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.72, (220, 240, 220), 2, cv2.LINE_AA)
+
+                # The Interactive Toggle Switch
+                is_switched = t >= click_time
+                tg_x, tg_y = sw_x + 80, sw_y + 110
+                tg_w, tg_h = 240, 70
+                # Housing
+                housing_col = (20, 90, 40) if is_switched else (45, 45, 50)
+                cv2.rectangle(canvas, (tg_x, tg_y), (tg_x + tg_w, tg_y + tg_h), housing_col, -1)
+                cv2.rectangle(canvas, (tg_x, tg_y), (tg_x + tg_w, tg_y + tg_h), (80, 220, 120) if is_switched else (120, 120, 120), 2, cv2.LINE_AA)
+                
+                # Knob position moves on click
+                knob_x = tg_x + tg_w - 45 if is_switched else tg_x + 45
+                cv2.circle(canvas, (knob_x, tg_y + 35), 28, (255, 255, 255), -1, cv2.LINE_AA)
+                cv2.circle(canvas, (knob_x, tg_y + 35), 28, (60, 220, 100) if is_switched else (140, 140, 140), 2, cv2.LINE_AA)
+                
+                # Switch label
+                mode_str = "HYPER FOCUS: ACTIVE" if is_switched else "DEFAULT ROUTINE: OFF"
+                cv2.putText(canvas, mode_str, (sw_x + 40, sw_y + 240), cv2.FONT_HERSHEY_DUPLEX, 0.72, 
+                            (80, 255, 140) if is_switched else (160, 160, 160), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "First move made instant. Distractions locked out.", (sw_x + 40, sw_y + 290), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.58, (180, 220, 180), 1, cv2.LINE_AA)
+
+            # ----------------- THEME 5: 5-SECOND INSTANT FIX -----------------
+            elif theme_mode == "instant":
+                canvas[:] = (18, 26, 22)
+                cursor_target = (int(width * 0.48), int(height * 0.40))
+
+                # Giant 5.00s Countdown Gauge
+                gauge_cx, gauge_cy = int(width * 0.22), int(height * 0.40)
+                gauge_r = 120
+                cv2.circle(canvas, (gauge_cx, gauge_cy), gauge_r, (40, 60, 50), 6, cv2.LINE_AA)
+                
+                # Depleting radial arc
+                gauge_pct = max(0.0, 1.0 - progress)
+                end_angle = int(360 * gauge_pct)
+                if end_angle > 0:
+                    cv2.ellipse(canvas, (gauge_cx, gauge_cy), (gauge_r, gauge_r), -90, 0, end_angle, (50, 240, 140), 8, cv2.LINE_AA)
+
+                # Digital countdown numbers
+                remaining_sec = max(0.0, 5.0 * (1.0 - progress))
+                cv2.putText(canvas, f"{remaining_sec:04.2f}s", (gauge_cx - 72, gauge_cy + 16), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1.5, (255, 255, 255), 3, cv2.LINE_AA)
+                cv2.putText(canvas, "< 5 SECONDS FIX", (gauge_cx - 68, gauge_cy + 65), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.55, (60, 240, 140), 1, cv2.LINE_AA)
+
+                # Instant Fix Celebration Card
+                fix_x, fix_y, fix_w, fix_h = int(width * 0.36), int(height * 0.22), 520, 360
+                cv2.rectangle(canvas, (fix_x, fix_y), (fix_x + fix_w, fix_y + fix_h), (25, 34, 30), -1)
+                cv2.rectangle(canvas, (fix_x, fix_y), (fix_x + fix_w, fix_y + fix_h), (60, 220, 140), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "INSTANT PERFORMANCE PATCH", (fix_x + 28, fix_y + 44), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.72, (240, 255, 240), 2, cv2.LINE_AA)
+
+                # Giant Animated Checkmark
+                chk_cx, chk_cy = fix_x + 90, fix_y + 160
+                cv2.circle(canvas, (chk_cx, chk_cy), 48, (40, 160, 80), -1, cv2.LINE_AA)
+                cv2.line(canvas, (chk_cx - 20, chk_cy), (chk_cx - 4, chk_cy + 18), (255, 255, 255), 5, cv2.LINE_AA)
+                cv2.line(canvas, (chk_cx - 4, chk_cy + 18), (chk_cx + 26, chk_cy - 16), (255, 255, 255), 5, cv2.LINE_AA)
+                
+                # Confetti sparks shooting out
                 for ci in range(12):
-                    bar_x = int(width * 0.15 + ci * (width * 0.65 / 11))
-                    bar_h = int(60 + ci * 25 + math.sin(t * 3 + ci) * 20)
-                    top_y = int(height * 0.8 - bar_h)
-                    # Green candle with opacity
-                    color = (40, 180, 80) if ci % 3 != 1 else (60, 60, 200)
-                    cv2.line(canvas, (bar_x, top_y - 15), (bar_x, int(height * 0.8) + 15), (70, 70, 70), 1)
-                    cv2.rectangle(canvas, (bar_x - 12, top_y), (bar_x + 12, int(height * 0.8)), color, -1)
+                    c_ang = ci * (math.pi / 6) + t * 4
+                    c_dist = 65 + math.sin(t * 8 + ci) * 15
+                    sp_x = int(chk_cx + c_dist * math.cos(c_ang))
+                    sp_y = int(chk_cy + c_dist * math.sin(c_ang))
+                    cv2.circle(canvas, (sp_x, sp_y), 4, (60, 240, 255) if ci % 2 == 0 else (60, 255, 120), -1, cv2.LINE_AA)
 
-                # Animate upward trend curve progressively
-                visible_points_count = max(2, int(progress * len(chart_points)) + 1)
-                visible_pts = chart_points[:visible_points_count]
+                cv2.putText(canvas, "PROBLEM RESOLVED", (fix_x + 165, fix_y + 145), cv2.FONT_HERSHEY_DUPLEX, 0.85, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "EXECUTION: ZERO LATENCY", (fix_x + 165, fix_y + 185), cv2.FONT_HERSHEY_SIMPLEX, 0.60, (80, 255, 140), 2, cv2.LINE_AA)
+
+                # Comparison pill
+                cv2.rectangle(canvas, (fix_x + 28, fix_y + 260), (fix_x + fix_w - 28, fix_y + 320), (35, 45, 40), -1)
+                cv2.putText(canvas, "MANUAL FIX: 4 HOURS  -->  INCUBRIX: 4.8s", (fix_x + 48, fix_y + 298), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.58, (60, 220, 255), 2, cv2.LINE_AA)
+
+            # ----------------- THEME 6: INBOX BLUEPRINT DELIVERY -----------------
+            elif theme_mode == "email":
+                canvas[:] = (26, 18, 22)
+                cursor_target = (int(width * 0.44), int(height * 0.50))
+
+                # Glassmorphic Email Client UI Card
+                em_x, em_y, em_w, em_h = int(width * 0.08), int(height * 0.16), 560, 440
+                cv2.rectangle(canvas, (em_x, em_y), (em_x + em_w, em_y + em_h), (34, 24, 30), -1)
+                cv2.rectangle(canvas, (em_x, em_y), (em_x + em_w, em_y + em_h), (80, 160, 255), 2, cv2.LINE_AA)
                 
+                # Titlebar
+                cv2.rectangle(canvas, (em_x, em_y), (em_x + em_w, em_y + 45), (45, 32, 40), -1)
+                cv2.putText(canvas, "MAIL CLIENT // INBOX (1 UNREAD)", (em_x + 24, em_y + 30), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.65, (240, 240, 255), 2, cv2.LINE_AA)
+                
+                # Email Entry
+                cv2.putText(canvas, "FROM: IncuBrix AI <blueprint@incubrix.ai>", (em_x + 28, em_y + 90), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.58, (180, 180, 200), 1, cv2.LINE_AA)
+                cv2.putText(canvas, "SUBJECT: Full Step-by-Step Action Breakdown", (em_x + 28, em_y + 130), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.72, (255, 255, 255), 2, cv2.LINE_AA)
+
+                # Animated 3D Envelope & Sliding Document
+                env_x, env_y = em_x + 240, em_y + 260
+                # Document sliding up out of envelope
+                doc_lift = int(min(65.0, progress * 85.0))
+                cv2.rectangle(canvas, (env_x - 90, env_y - 60 - doc_lift), (env_x + 90, env_y + 10 - doc_lift), (240, 240, 245), -1)
+                cv2.putText(canvas, "ACTION PLAN", (env_x - 65, env_y - 25 - doc_lift), cv2.FONT_HERSHEY_DUPLEX, 0.55, (30, 30, 30), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "[PDF BLUEPRINT]", (env_x - 70, env_y - 2 - doc_lift), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (40, 120, 220), 1, cv2.LINE_AA)
+                
+                # Envelope body
+                cv2.rectangle(canvas, (env_x - 110, env_y - 30), (env_x + 110, env_y + 70), (55, 40, 50), -1)
+                cv2.rectangle(canvas, (env_x - 110, env_y - 30), (env_x + 110, env_y + 70), (80, 160, 255), 2, cv2.LINE_AA)
+                # Flap fold lines
+                cv2.line(canvas, (env_x - 110, env_y - 30), (env_x, env_y + 20), (80, 160, 255), 2, cv2.LINE_AA)
+                cv2.line(canvas, (env_x + 110, env_y - 30), (env_x, env_y + 20), (80, 160, 255), 2, cv2.LINE_AA)
+
+                # Delivery notification pill
+                cv2.rectangle(canvas, (em_x + 28, em_y + 360), (em_x + em_w - 28, em_y + 415), (25, 45, 30), -1)
+                cv2.rectangle(canvas, (em_x + 28, em_y + 360), (em_x + em_w - 28, em_y + 415), (60, 240, 100), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "STATUS: SENT DIRECTLY TO YOUR INBOX", (em_x + 60, em_y + 396), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.62, (80, 255, 140), 2, cv2.LINE_AA)
+
+            # ----------------- THEME 7: SOCIAL COMMENTS 'YES' FEED -----------------
+            elif theme_mode == "social":
+                canvas[:] = (24, 16, 28)
+                cursor_target = (int(width * 0.46), int(height * 0.54))
+
+                # Live Comments Feed Card
+                sc_x, sc_y, sc_w, sc_h = int(width * 0.08), int(height * 0.16), 560, 440
+                cv2.rectangle(canvas, (sc_x, sc_y), (sc_x + sc_w, sc_y + sc_h), (34, 22, 38), -1)
+                cv2.rectangle(canvas, (sc_x, sc_y), (sc_x + sc_w, sc_y + sc_h), (200, 100, 240), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "COMMUNITY STREAM // LIVE COMMENTS", (sc_x + 28, sc_y + 44), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.68, (255, 230, 255), 2, cv2.LINE_AA)
+
+                # Bubble 1
+                b1_y = sc_y + 80
+                cv2.rectangle(canvas, (sc_x + 24, b1_y), (sc_x + sc_w - 24, b1_y + 55), (45, 30, 50), -1)
+                cv2.circle(canvas, (sc_x + 50, b1_y + 28), 16, (200, 120, 240), -1, cv2.LINE_AA)
+                cv2.putText(canvas, "@alex_creator: YES! Dropping in comments now", (sc_x + 78, b1_y + 34), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.56, (240, 240, 255), 1, cv2.LINE_AA)
+
+                # Bubble 2
+                b2_y = sc_y + 155
+                cv2.rectangle(canvas, (sc_x + 24, b2_y), (sc_x + sc_w - 24, b2_y + 55), (45, 30, 50), -1)
+                cv2.circle(canvas, (sc_x + 50, b2_y + 28), 16, (240, 160, 60), -1, cv2.LINE_AA)
+                cv2.putText(canvas, "@sarah_dev: YES! Need the full breakdown PDF", (sc_x + 78, b2_y + 34), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.56, (240, 240, 255), 1, cv2.LINE_AA)
+
+                # Bubble 3
+                b3_y = sc_y + 230
+                cv2.rectangle(canvas, (sc_x + 24, b3_y), (sc_x + sc_w - 24, b3_y + 55), (45, 30, 50), -1)
+                cv2.circle(canvas, (sc_x + 50, b3_y + 28), 16, (60, 220, 120), -1, cv2.LINE_AA)
+                cv2.putText(canvas, "@marcus_ai: Commented 'YES'! Game changer", (sc_x + 78, b3_y + 34), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.56, (240, 240, 255), 1, cv2.LINE_AA)
+
+                # Interactive "DROP 'YES' NOW" Call to Action Button
+                is_sub = t >= click_time
+                btn_y = sc_y + 325
+                btn_col = (20, 120, 50) if is_sub else (160, 60, 220)
+                cv2.rectangle(canvas, (sc_x + 24, btn_y), (sc_x + sc_w - 24, btn_y + 75), btn_col, -1)
+                cv2.rectangle(canvas, (sc_x + 24, btn_y), (sc_x + sc_w - 24, btn_y + 75), (255, 255, 255), 2, cv2.LINE_AA)
+                btn_label = "✔ 'YES' REGISTERED! CHECK YOUR DM" if is_sub else "▶ DROP A 'YES' IN THE COMMENTS RIGHT NOW"
+                cv2.putText(canvas, btn_label, (sc_x + 40, btn_y + 46), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.62, (255, 255, 255), 2, cv2.LINE_AA)
+
+                # Floating Reaction Fountain (Hearts & Embers rising)
+                for hi in range(8):
+                    f_y = int((height * 0.85) - ((t * 90 + hi * 45) % (height * 0.70)))
+                    f_x = int(width * 0.44 + math.sin(t * 3 + hi) * 45 + (hi % 3) * 35)
+                    # Heart shape
+                    cv2.circle(canvas, (f_x - 6, f_y - 4), 7, (80, 60, 240), -1, cv2.LINE_AA)
+                    cv2.circle(canvas, (f_x + 6, f_y - 4), 7, (80, 60, 240), -1, cv2.LINE_AA)
+                    cv2.fillPoly(canvas, [np.array([[f_x - 13, f_y - 2], [f_x + 13, f_y - 2], [f_x, f_y + 13]], np.int32)], (80, 60, 240), cv2.LINE_AA)
+
+            # ----------------- THEME 8: FINANCIAL SURGE -----------------
+            elif theme_mode == "finance":
+                canvas[:] = (16, 14, 10)
+                cursor_target = (int(width * 0.40), int(height * 0.28))
+                
+                # Grid
+                for gx in range(0, int(width * 0.74), 100):
+                    cv2.line(canvas, (gx, 0), (gx, height), (32, 26, 18), 1)
+                for gy in range(0, height, 80):
+                    cv2.line(canvas, (0, gy), (int(width * 0.74), gy), (32, 26, 18), 1)
+
+                # Animated candlestick pillars
+                for ci in range(12):
+                    bar_x = int(width * 0.10 + ci * (width * 0.56 / 11))
+                    bar_h = int(60 + ci * 24 + math.sin(t * 3.5 + ci) * 18)
+                    top_y = int(height * 0.78 - bar_h)
+                    candle_color = (45, 190, 85) if ci % 3 != 1 else (65, 65, 210)
+                    cv2.line(canvas, (bar_x, top_y - 18), (bar_x, int(height * 0.78) + 18), (80, 80, 80), 1)
+                    cv2.rectangle(canvas, (bar_x - 13, top_y), (bar_x + 13, int(height * 0.78)), candle_color, -1)
+
+                # Upward trend curve
+                visible_count = max(2, int(progress * len(chart_points)) + 1)
+                visible_pts = chart_points[:visible_count]
                 if len(visible_pts) > 1:
-                    # Glowing area fill under curve
-                    poly_pts = [np.array([visible_pts[0][0], int(height * 0.82)])]
+                    poly_pts = [np.array([visible_pts[0][0], int(height * 0.80)])]
                     poly_pts.extend([np.array(p) for p in visible_pts])
-                    poly_pts.append(np.array([visible_pts[-1][0], int(height * 0.82)]))
-                    
+                    poly_pts.append(np.array([visible_pts[-1][0], int(height * 0.80)]))
                     fill_mask = np.zeros_like(canvas)
-                    cv2.fillPoly(fill_mask, [np.array(poly_pts, dtype=np.int32)], (20, 80, 40))
-                    canvas = cv2.addWeighted(canvas, 1.0, fill_mask, 0.45, 0)
-
-                    # Draw bright glowing line
+                    cv2.fillPoly(fill_mask, [np.array(poly_pts, dtype=np.int32)], (25, 95, 45))
+                    canvas = cv2.addWeighted(canvas, 1.0, fill_mask, 0.48, 0)
                     for i in range(len(visible_pts) - 1):
-                        cv2.line(canvas, visible_pts[i], visible_pts[i+1], (60, 240, 120), 4, cv2.LINE_AA)
+                        cv2.line(canvas, visible_pts[i], visible_pts[i+1], (55, 245, 125), 4, cv2.LINE_AA)
 
-                    # Head point with pulsing concentric circle
-                    head = visible_pts[-1]
-                    pulse_r = int(12 + math.sin(t * 8) * 4)
-                    cv2.circle(canvas, head, pulse_r, (100, 255, 180), 2, cv2.LINE_AA)
-                    cv2.circle(canvas, head, 6, (255, 255, 255), -1, cv2.LINE_AA)
+                # Metric Card
+                card1_x, card1_y, card1_w, card1_h = int(width * 0.08), int(height * 0.12), 480, 160
+                cv2.rectangle(canvas, (card1_x, card1_y), (card1_x + card1_w, card1_y + card1_h), (28, 24, 18), -1)
+                cv2.rectangle(canvas, (card1_x, card1_y), (card1_x + card1_w, card1_y + card1_h), (60, 220, 120), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "ANNUAL REVENUE SURGE", (card1_x + 22, card1_y + 36), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (180, 180, 180), 1, cv2.LINE_AA)
+                current_percent = min(40.2, progress * 40.2 * 1.3)
+                cv2.putText(canvas, f"+{current_percent:04.1f}% EXPANSION", (card1_x + 22, card1_y + 92), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1.25, (60, 255, 140), 2, cv2.LINE_AA)
+                cv2.rectangle(canvas, (card1_x + 22, card1_y + 112), (card1_x + 240, card1_y + 142), (20, 80, 40), -1)
+                cv2.putText(canvas, "▲ KPI TARGET EXCEEDED", (card1_x + 30, card1_y + 132), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.52, (120, 255, 170), 1, cv2.LINE_AA)
 
-                # Modern HUD metric overlays
-                cv2.putText(canvas, "+40.2% ANNUAL GROWTH", (int(width * 0.12), int(height * 0.18)), 
-                            cv2.FONT_HERSHEY_DUPLEX, 1.2, (60, 255, 140), 2, cv2.LINE_AA)
-                cv2.putText(canvas, "METRICS: COMPOUND INTEREST // CAPITAL ASSETS // YIELD", 
-                            (int(width * 0.12), int(height * 0.23)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (160, 160, 160), 1, cv2.LINE_AA)
+                # Floating 3D Gold Coins
+                for ci in range(3):
+                    coin_t = t * 2 + ci * 1.2
+                    coin_x = int(width * 0.42 + math.sin(coin_t) * 70 + ci * 70)
+                    coin_y = int(height * 0.28 + math.cos(coin_t * 0.8) * 35 + ci * 30)
+                    cv2.circle(canvas, (coin_x, coin_y), 24, (30, 180, 240), -1, cv2.LINE_AA)
+                    cv2.circle(canvas, (coin_x, coin_y), 20, (50, 215, 255), -1, cv2.LINE_AA)
+                    cv2.putText(canvas, "$", (coin_x - 7, coin_y + 8), cv2.FONT_HERSHEY_DUPLEX, 0.8, (20, 110, 180), 2, cv2.LINE_AA)
 
-            elif is_tech:
-                # ----------------- THEME 2: CLOUD & INFRASTRUCTURE -----------------
-                # Deep cybernetic obsidian canvas
-                canvas[:] = (24, 16, 8)
+            # ----------------- THEME 9: CLOUD DEPLOYMENT & CODE -----------------
+            elif theme_mode == "tech":
+                canvas[:] = (20, 16, 10)
+                cursor_target = (int(width * 0.42), int(height * 0.35))
 
-                # 3D Perspective Grid receding to horizon
-                horizon_y = int(height * 0.42)
-                vp_x = int(width * 0.5)
-                # Perspective lines
-                for px in range(-width, width * 2, 160):
-                    cv2.line(canvas, (vp_x, horizon_y), (px, height), (90, 60, 20), 1, cv2.LINE_AA)
-                # Horizontal lines moving forward
-                offset = (t * 80) % 60
-                for ly in range(horizon_y + 10, height, 45):
-                    actual_y = ly + int(offset)
-                    if actual_y < height:
-                        alpha = (actual_y - horizon_y) / (height - horizon_y)
-                        line_color = (int(140 * alpha), int(90 * alpha), int(30 * alpha))
-                        cv2.line(canvas, (0, actual_y), (width, actual_y), line_color, 1, cv2.LINE_AA)
+                # Perspective Grid
+                horizon_y = int(height * 0.40)
+                vp_x = int(width * 0.42)
+                for px in range(-width, width * 2, 140):
+                    cv2.line(canvas, (vp_x, horizon_y), (px, height), (75, 50, 20), 1, cv2.LINE_AA)
 
-                # Server rack floating nodes with glowing pulses
-                for ri in range(5):
-                    node_x = int(width * 0.2 + ri * (width * 0.6 / 4))
-                    node_y = int(height * 0.25 + math.sin(t * 2 + ri) * 15)
-                    # Server module box
-                    cv2.rectangle(canvas, (node_x - 70, node_y - 45), (node_x + 70, node_y + 45), (60, 45, 25), -1)
-                    cv2.rectangle(canvas, (node_x - 70, node_y - 45), (node_x + 70, node_y + 45), (220, 160, 60), 2, cv2.LINE_AA)
-                    
-                    # Status LED blinkers
-                    led_color = (80, 255, 120) if (frame_idx + ri * 6) % 20 > 5 else (50, 80, 255)
-                    cv2.circle(canvas, (node_x + 50, node_y - 25), 5, led_color, -1, cv2.LINE_AA)
-                    cv2.putText(canvas, f"SRV-0{ri+1}", (node_x - 55, node_y + 8), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (220, 220, 220), 1, cv2.LINE_AA)
-                    cv2.putText(canvas, "CLOUD CLUSTER", (node_x - 55, node_y + 28), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 160, 160), 1, cv2.LINE_AA)
+                # Terminal Card
+                term_x, term_y, term_w, term_h = int(width * 0.08), int(height * 0.12), 520, 220
+                cv2.rectangle(canvas, (term_x, term_y), (term_x + term_w, term_y + term_h), (25, 20, 15), -1)
+                cv2.rectangle(canvas, (term_x, term_y), (term_x + term_w, term_y + term_h), (220, 160, 50), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "bash — cloud-cluster-deploy", (term_x + 30, term_y + 28), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.52, (200, 200, 200), 1, cv2.LINE_AA)
+                code_lines = [
+                    "> python -m cloud.cluster --autoscale",
+                    "[DEPLOY] Spinning up 64 distributed nodes...",
+                    "[STATUS] 99.99% Uptime Verified. Zero Lag.",
+                    "[BACKUP] Automated encrypted sync: ACTIVE"
+                ]
+                for l_idx, line in enumerate(code_lines):
+                    if progress >= (l_idx * 0.22):
+                        cv2.putText(canvas, line, (term_x + 22, term_y + 70 + l_idx * 34), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.56, (80, 220, 255) if l_idx == 0 else (180, 240, 140), 1, cv2.LINE_AA)
 
-                # Circuit packet pulses traveling across
-                pulse_x = int((t * 400) % width)
-                cv2.line(canvas, (0, int(height * 0.38)), (width, int(height * 0.38)), (80, 50, 20), 2)
-                cv2.circle(canvas, (pulse_x, int(height * 0.38)), 8, (255, 220, 100), -1, cv2.LINE_AA)
+                # Server Racks
+                for ri in range(3):
+                    srv_x = int(width * 0.44 + ri * 90)
+                    srv_y = int(height * 0.32 + math.sin(t * 2.5 + ri) * 14)
+                    cv2.rectangle(canvas, (srv_x - 36, srv_y - 55), (srv_x + 36, srv_y + 55), (55, 40, 22), -1)
+                    cv2.rectangle(canvas, (srv_x - 36, srv_y - 55), (srv_x + 36, srv_y + 55), (220, 160, 50), 2, cv2.LINE_AA)
+                    led_on = (frame_idx + ri * 7) % 18 > 4
+                    cv2.circle(canvas, (srv_x + 18, srv_y - 35), 4, (60, 255, 100) if led_on else (40, 60, 180), -1, cv2.LINE_AA)
+                    cv2.putText(canvas, f"NODE-{ri+1}", (srv_x - 28, srv_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (240, 240, 240), 1, cv2.LINE_AA)
 
-                # Overlay HUD
-                cv2.putText(canvas, "DISTRIBUTED CLUSTER // UPTIME 99.99%", (int(width * 0.1), int(height * 0.12)), 
-                            cv2.FONT_HERSHEY_DUPLEX, 1.1, (240, 180, 80), 2, cv2.LINE_AA)
+            # ----------------- THEME 10: PARTNERSHIP TRUST -----------------
+            elif theme_mode == "trust":
+                canvas[:] = (18, 16, 24)
+                cursor_target = (int(width * 0.40), int(height * 0.42))
 
-            elif is_trust:
-                # ----------------- THEME 3: PARTNERSHIP & TRUST -----------------
-                # Warm obsidian & deep bronze
-                canvas[:] = (16, 18, 22)
+                # Interlocking Gears
+                gear1_c = (int(width * 0.32), int(height * 0.38))
+                gear1_r = 85
+                gear1_ang = t * 1.5
+                cv2.circle(canvas, gear1_c, gear1_r, (40, 130, 200), 4, cv2.LINE_AA)
+                for c_idx in range(8):
+                    c_ang = gear1_ang + c_idx * (math.pi / 4)
+                    tooth_x = int(gear1_c[0] + (gear1_r + 14) * math.cos(c_ang))
+                    tooth_y = int(gear1_c[1] + (gear1_r + 14) * math.sin(c_ang))
+                    cv2.circle(canvas, (tooth_x, tooth_y), 8, (50, 160, 230), -1, cv2.LINE_AA)
 
-                # Expanding rotating geometric harmonic rings
-                center = (int(width * 0.5), int(height * 0.5))
-                for ri in range(4):
-                    ring_r = int(120 + ri * 80 + math.sin(t * 1.5 + ri) * 30)
-                    cv2.circle(canvas, center, ring_r, (40, 70, 95), 1, cv2.LINE_AA)
-                    # Orbiting node on ring
-                    angle = t * (0.8 - ri * 0.15) + ri * (math.pi / 2)
-                    ox = int(center[0] + ring_r * math.cos(angle))
-                    oy = int(center[1] + ring_r * math.sin(angle))
-                    cv2.circle(canvas, (ox, oy), 7, (70, 180, 230), -1, cv2.LINE_AA)
-                    cv2.circle(canvas, (ox, oy), 14, (70, 180, 230), 1, cv2.LINE_AA)
+                gear2_c = (int(width * 0.44), int(height * 0.48))
+                gear2_r = 60
+                gear2_ang = -t * 1.5 * (gear1_r / gear2_r)
+                cv2.circle(canvas, gear2_c, gear2_r, (40, 160, 220), 4, cv2.LINE_AA)
+                for c_idx in range(6):
+                    c_ang = gear2_ang + c_idx * (math.pi / 3)
+                    tooth_x = int(gear2_c[0] + (gear2_r + 12) * math.cos(c_ang))
+                    tooth_y = int(gear2_c[1] + (gear2_r + 12) * math.sin(c_ang))
+                    cv2.circle(canvas, (tooth_x, tooth_y), 7, (60, 180, 240), -1, cv2.LINE_AA)
 
-                # Particle constellation with proximity connections
-                for p in particles:
-                    p["x"] += p["vx"]
-                    p["y"] += p["vy"]
-                    if p["x"] < 50 or p["x"] > width - 50: p["vx"] *= -1
-                    if p["y"] < 50 or p["y"] > height - 50: p["vy"] *= -1
+                # Card
+                card3_x, card3_y, card3_w, card3_h = int(width * 0.08), int(height * 0.12), 480, 170
+                cv2.rectangle(canvas, (card3_x, card3_y), (card3_x + card3_w, card3_y + card3_h), (28, 22, 34), -1)
+                cv2.rectangle(canvas, (card3_x, card3_y), (card3_x + card3_w, card3_y + card3_h), (60, 170, 240), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "PARTNERSHIP ALLIANCE", (card3_x + 22, card3_y + 36), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 200, 200), 1, cv2.LINE_AA)
+                cv2.putText(canvas, "TRUST BUILT OVER TIME", (card3_x + 22, card3_y + 82), 
+                            cv2.FONT_HERSHEY_DUPLEX, 1.1, (80, 210, 255), 2, cv2.LINE_AA)
+                cv2.rectangle(canvas, (card3_x + 22, card3_y + 110), (card3_x + card3_w - 22, card3_y + 135), (45, 35, 55), -1)
+                fill_w = int((card3_w - 44) * min(1.0, progress * 1.4))
+                cv2.rectangle(canvas, (card3_x + 22, card3_y + 110), (card3_x + 22 + fill_w, card3_y + 135), (60, 180, 255), -1)
 
-                # Draw connecting lines between close particles
-                for i in range(num_particles):
-                    for j in range(i + 1, num_particles):
-                        dx = particles[i]["x"] - particles[j]["x"]
-                        dy = particles[i]["y"] - particles[j]["y"]
-                        dist = math.hypot(dx, dy)
-                        if dist < 140:
-                            alpha = 1.0 - (dist / 140)
-                            color = (int(50 * alpha), int(120 * alpha), int(180 * alpha))
-                            cv2.line(canvas, (int(particles[i]["x"]), int(particles[i]["y"])), 
-                                     (int(particles[j]["x"]), int(particles[j]["y"])), color, 1, cv2.LINE_AA)
-
-                for p in particles:
-                    cv2.circle(canvas, (int(p["x"]), int(p["y"])), p["radius"], (120, 210, 255), -1, cv2.LINE_AA)
-
-                cv2.putText(canvas, "COLLABORATION // TRUST & RESILIENCE", (int(width * 0.1), int(height * 0.15)), 
-                            cv2.FONT_HERSHEY_DUPLEX, 1.1, (160, 215, 255), 2, cv2.LINE_AA)
-
+            # ----------------- THEME 11: CREATIVE MOTION FALLBACK -----------------
             else:
-                # ----------------- THEME 4: DYNAMIC CREATIVE MOTION GRAPHICS -----------------
-                # Modern indigo-slate background
-                canvas[:] = (28, 18, 20)
+                canvas[:] = (26, 16, 26)
+                cursor_target = (int(width * 0.40), int(height * 0.40))
 
-                # Multi-layered flowing sine wave curves
                 for layer in range(5):
                     pts = []
-                    layer_color = (int(80 + layer * 35), int(120 + layer * 20), int(220 - layer * 20))
-                    for x in range(0, width, 20):
-                        freq = 0.003 + layer * 0.001
-                        y = int(height * 0.5 + math.sin(x * freq + t * 2 + layer) * (90 + layer * 20))
+                    layer_color = (int(90 + layer * 32), int(120 + layer * 20), int(230 - layer * 18))
+                    for x in range(0, int(width * 0.74), 18):
+                        freq = 0.0035 + layer * 0.001
+                        y = int(height * 0.52 + math.sin(x * freq + t * 2.5 + layer) * (80 + layer * 22))
                         pts.append((x, y))
                     for i in range(len(pts) - 1):
                         cv2.line(canvas, pts[i], pts[i+1], layer_color, 2, cv2.LINE_AA)
 
-                # Kinetic particle vortex
-                for pi, p in enumerate(particles[:25]):
-                    p_ang = t * 1.2 + pi * 0.3
-                    p_rad = 180 + math.sin(t + pi) * 80
-                    cx = int(width * 0.5 + p_rad * math.cos(p_ang))
-                    cy = int(height * 0.5 + p_rad * math.sin(p_ang))
-                    cv2.circle(canvas, (cx, cy), 6, (220, 180, 255), -1, cv2.LINE_AA)
-                    cv2.line(canvas, (int(width * 0.5), int(height * 0.5)), (cx, cy), (60, 40, 80), 1, cv2.LINE_AA)
+                h_card_x, h_card_y = int(width * 0.08), int(height * 0.14)
+                cv2.rectangle(canvas, (h_card_x, h_card_y), (h_card_x + 500, h_card_y + 140), (38, 22, 38), -1)
+                cv2.rectangle(canvas, (h_card_x, h_card_y), (h_card_x + 500, h_card_y + 140), (200, 100, 240), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "INCUBRIX CREATIVE STUDIO", (h_card_x + 24, h_card_y + 48), 
+                            cv2.FONT_HERSHEY_DUPLEX, 0.90, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "AI VIDEO // SCENE SYNTHESIS ACTIVE", (h_card_x + 24, h_card_y + 92), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.60, (200, 160, 240), 1, cv2.LINE_AA)
 
-            # Render Animated AI Character Presenter (Creator Avatar)
-            theme_key = "finance" if is_finance else ("tech" if is_tech else ("trust" if is_trust else "creative"))
-            self._draw_animated_character(canvas, frame_idx, t, width, height, theme_key)
+            # ----------------- ANIMATED MOUSE POINTER & REALISTIC CLICKS -----------------
+            # Cursor moves smoothly to target and clicks
+            if cursor_active:
+                if t < click_time:
+                    # Easing move towards target
+                    mv_pct = min(1.0, t / (click_time * 0.85))
+                    smooth_p = 0.5 - 0.5 * math.cos(mv_pct * math.pi)
+                    cur_x = int(cursor_start[0] + (cursor_target[0] - cursor_start[0]) * smooth_p)
+                    cur_y = int(cursor_start[1] + (cursor_target[1] - cursor_start[1]) * smooth_p)
+                    self._draw_cursor(canvas, cur_x, cur_y, clicking=False)
+                else:
+                    # Hovering on target, clicking at click_time
+                    click_p = min(1.0, (t - click_time) / 0.6)
+                    self._draw_cursor(canvas, cursor_target[0], cursor_target[1], clicking=True, click_progress=click_p)
 
-            # Subtle vignette and timestamp footer
-            cv2.rectangle(canvas, (0, height - 40), (width, height), (10, 10, 10), -1)
-            cv2.putText(canvas, f"INCUBRIX B-ROLL // SCENE TIMECODE: {t:05.2f}s // 30 FPS", 
-                        (30, height - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (140, 140, 140), 1, cv2.LINE_AA)
+            # ----------------- ANIMATED CHARACTER PRESENTER WITH TRUE LIP SYNC -----------------
+            self._draw_animated_character(
+                canvas=canvas,
+                frame_idx=frame_idx,
+                t=t,
+                width=width,
+                height=height,
+                theme=theme_mode,
+                lip_sync_energy=lip_sync_energy,
+                scene_text=scene_text
+            )
+
+            # Watermark-free clean footer timecode
+            cv2.rectangle(canvas, (0, height - 38), (width, height), (12, 12, 12), -1)
+            cv2.putText(canvas, f"INCUBRIX B-ROLL // THEME: {theme_title.upper()} // AUDIO LIP-SYNC: {lip_sync_energy:04.2f} // 30 FPS", 
+                        (32, height - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (170, 170, 170), 1, cv2.LINE_AA)
 
             writer.write(canvas)
 
@@ -295,9 +809,9 @@ class FootageManager:
         cmd = [
             FFMPEG_EXE, "-y", "-i", str(raw_temp),
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "30",
+            "-preset", "veryfast", "-crf", "22",
             str(output_path)
         ]
-        import subprocess
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if raw_temp.exists():
             try:
@@ -306,39 +820,61 @@ class FootageManager:
                 pass
 
         clip_id = f"motion_{abs(q_hash) % 100000:05d}"
-        theme_name = "Financial Growth Analytics" if is_finance else ("Cloud Infrastructure Grid" if is_tech else ("Partnership Constellation" if is_trust else "Kinetic Motion Waves"))
         
         return FootageClip(
             clip_id=clip_id,
             local_path=output_path,
-            source=f"IncuBrix Kinetic Synthesis ({theme_name})",
+            source=f"IncuBrix Kinetic Synthesis ({theme_title})",
             license_name="Commercial Royalty-Free Grant (AI-Generated)",
             attribution="IncuBrix Generative Motion Engine",
             original_url=f"synthetic://render/{clip_id}",
             is_ai_generated=True,
-            selection_reason=f"Synthesized dynamic {theme_name} motion graphics with animated character host matched to query: '{query}'",
-            relevance_score=4.7
+            selection_reason=f"Synthesized interactive {theme_title} motion graphics with audio-synced character host matched to content: '{scene_text[:50]}...'",
+            relevance_score=4.9
         )
 
-    def _draw_animated_character(self, canvas: np.ndarray, frame_idx: int, t: float, width: int, height: int, theme: str):
+    def _draw_animated_character(
+        self,
+        canvas: np.ndarray,
+        frame_idx: int,
+        t: float,
+        width: int,
+        height: int,
+        theme: str,
+        lip_sync_energy: float,
+        scene_text: str = ""
+    ):
         """
-        Renders a stylized, animated AI character presenter directly into the video scene:
-        - Animated blinking eyes with glancing specular pupils
-        - Synchronized lip-flap mouth phoneme movement
-        - Floating/breathing harmonic motion
-        - Raised gesturing arm pointing toward the scene visuals
-        - Futuristic smart glasses / headset with glowing LED
+        Renders a stylized, animated AI character presenter 'Brixy' with TRUE audio-driven lip sync:
+        - When speaking: mouth opens and articulates dynamically with voice volume/energy and phonemes.
+        - When silent: mouth smoothly closes with a confident smile.
+        - Speech Equalizer Bubble above head: 8 live bouncing neon audio spectrum bars.
+        - Animated blinking eyes with glancing specular pupils following the interactive cards.
+        - Gesturing arm pointing toward the content cards.
         """
         # Character placement on the right side of the screen
         bob_y = int(math.sin(t * 3.8) * 8)
-        char_x = int(width * 0.82)
+        char_x = int(width * 0.80)
         char_y = int(height * 0.68) + bob_y
 
         # Ambient drop shadow beneath character
         cv2.ellipse(canvas, (char_x, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
 
         # Torso & Outfit (Modern creator hoodie/blazer)
-        outfit_color = (130, 70, 35) if theme == "finance" else ((40, 110, 160) if theme == "tech" else (90, 45, 120))
+        outfit_colors = {
+            "warning": (35, 30, 95),
+            "waste": (40, 25, 80),
+            "calendar": (45, 60, 110),
+            "tweak": (30, 80, 45),
+            "instant": (35, 95, 60),
+            "email": (80, 45, 45),
+            "social": (90, 40, 95),
+            "finance": (120, 70, 35),
+            "tech": (40, 110, 160),
+            "trust": (90, 45, 120),
+            "creative": (90, 45, 110)
+        }
+        outfit_color = outfit_colors.get(theme, (90, 45, 120))
         cv2.ellipse(canvas, (char_x, char_y + 170), (110, 135), 0, 0, 360, outfit_color, -1, cv2.LINE_AA)
         
         # Inner shirt / collar triangle
@@ -348,10 +884,10 @@ class FootageManager:
             [char_x + 30, char_y + 80]
         ], dtype=np.int32)], (240, 240, 245), cv2.LINE_AA)
 
-        # Gesturing Arm & Pointing Hand (towards the data chart / center visuals)
+        # Gesturing Arm & Pointing Hand (towards the interactive data cards on the left)
         arm_color = outfit_color
-        hand_target_x = int(char_x - 120 + math.cos(t * 3.5) * 18)
-        hand_target_y = int(char_y + 35 + math.sin(t * 3.5) * 22)
+        hand_target_x = int(char_x - 130 + math.cos(t * 3.5) * 16)
+        hand_target_y = int(char_y + 35 + math.sin(t * 3.5) * 20)
         elbow_x = int(char_x - 72)
         elbow_y = int(char_y + 120)
         
@@ -359,7 +895,7 @@ class FootageManager:
         cv2.line(canvas, (elbow_x, elbow_y), (hand_target_x, hand_target_y), (220, 185, 155), 18, cv2.LINE_AA)
         cv2.circle(canvas, (hand_target_x, hand_target_y), 15, (220, 185, 155), -1, cv2.LINE_AA)
         # Pointing index finger
-        cv2.line(canvas, (hand_target_x, hand_target_y), (hand_target_x - 22, hand_target_y - 12), (220, 185, 155), 6, cv2.LINE_AA)
+        cv2.line(canvas, (hand_target_x, hand_target_y), (hand_target_x - 24, hand_target_y - 12), (220, 185, 155), 6, cv2.LINE_AA)
 
         # Neck
         cv2.rectangle(canvas, (char_x - 20, char_y + 50), (char_x + 20, char_y + 90), (210, 175, 145), -1)
@@ -378,7 +914,8 @@ class FootageManager:
         cv2.ellipse(canvas, (char_x, char_y - 30), (70, 75), 0, 180, 360, (60, 60, 60), 4, cv2.LINE_AA)
         # Microphone boom with blinking status LED
         cv2.line(canvas, (char_x + 68, char_y), (char_x + 30, char_y + 40), (40, 40, 40), 3, cv2.LINE_AA)
-        cv2.circle(canvas, (char_x + 30, char_y + 40), 5, (20, 220, 120), -1, cv2.LINE_AA)
+        mic_led = (60, 255, 100) if lip_sync_energy > 0.05 else (40, 80, 220)
+        cv2.circle(canvas, (char_x + 30, char_y + 40), 5, mic_led, -1, cv2.LINE_AA)
 
         # Eyes & Blinking Animation
         eye_y = char_y - 8
@@ -393,29 +930,61 @@ class FootageManager:
             # Sclera (White)
             cv2.ellipse(canvas, (eye_left_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
             cv2.ellipse(canvas, (eye_right_x, eye_y), (13, 16), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
-            # Pupils (glancing slightly left towards the scene visuals)
-            pupil_offset_x = int(math.sin(t * 1.8) * 3) - 3
+            # Pupils (glancing toward the left-side interactive visuals)
+            pupil_offset_x = int(math.sin(t * 1.8) * 3) - 4
             cv2.circle(canvas, (eye_left_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
             cv2.circle(canvas, (eye_right_x + pupil_offset_x, eye_y), 7, (40, 80, 160), -1, cv2.LINE_AA)
             # Specular sparkle reflection
             cv2.circle(canvas, (eye_left_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
             cv2.circle(canvas, (eye_right_x + pupil_offset_x - 2, eye_y - 4), 3, (255, 255, 255), -1, cv2.LINE_AA)
-            # Eyebrows
-            cv2.line(canvas, (eye_left_x - 12, eye_y - 18), (eye_left_x + 12, eye_y - 19), (40, 30, 25), 3, cv2.LINE_AA)
-            cv2.line(canvas, (eye_right_x - 12, eye_y - 19), (eye_right_x + 12, eye_y - 18), (40, 30, 25), 3, cv2.LINE_AA)
+            # Eyebrows (animating subtly with speech excitement)
+            brow_lift = int(lip_sync_energy * 5)
+            cv2.line(canvas, (eye_left_x - 12, eye_y - 18 - brow_lift), (eye_left_x + 12, eye_y - 19 - brow_lift), (40, 30, 25), 3, cv2.LINE_AA)
+            cv2.line(canvas, (eye_right_x - 12, eye_y - 19 - brow_lift), (eye_right_x + 12, eye_y - 18 - brow_lift), (40, 30, 25), 3, cv2.LINE_AA)
 
-        # Animated Talking Mouth (Lip-flap oscillating with narration)
+        # ----------------- TRUE AUDIO-DRIVEN LIP SYNC MOUTH -----------------
         mouth_y = char_y + 36
-        mouth_open = int(max(3, abs(math.sin(t * 14)) * 14))
-        cv2.ellipse(canvas, (char_x, mouth_y), (16, mouth_open), 0, 0, 360, (50, 30, 160), -1, cv2.LINE_AA)
-        if mouth_open > 6:
-            cv2.ellipse(canvas, (char_x, mouth_y - mouth_open + 4), (10, 3), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+        if lip_sync_energy > 0.04:
+            # Mouth opens dynamically according to volume
+            mouth_open_h = int(3 + lip_sync_energy * 26)
+            mouth_w = int(14 + lip_sync_energy * 7)
+            # Dark oral cavity
+            cv2.ellipse(canvas, (char_x, mouth_y), (mouth_w, mouth_open_h), 0, 0, 360, (30, 20, 120), -1, cv2.LINE_AA)
+            # Upper teeth
+            cv2.ellipse(canvas, (char_x, mouth_y - mouth_open_h + 3), (mouth_w - 4, 3), 0, 0, 360, (255, 255, 255), -1, cv2.LINE_AA)
+            # Lower tongue
+            if mouth_open_h > 10:
+                cv2.ellipse(canvas, (char_x, mouth_y + mouth_open_h - 4), (mouth_w - 6, 4), 0, 0, 360, (80, 70, 210), -1, cv2.LINE_AA)
+        else:
+            # Closed mouth with subtle smile curve
+            cv2.ellipse(canvas, (char_x, mouth_y - 2), (14, 5), 0, 0, 180, (40, 30, 25), 3, cv2.LINE_AA)
+
+        # ----------------- LIVE AUDIO EQUALIZER BUBBLE -----------------
+        # Animated speech bubble above character's head with 8 bouncing frequency bars
+        bubble_x, bubble_y = char_x - 140, char_y - 150
+        cv2.rectangle(canvas, (bubble_x, bubble_y), (bubble_x + 220, bubble_y + 55), (28, 22, 34), -1)
+        cv2.rectangle(canvas, (bubble_x, bubble_y), (bubble_x + 220, bubble_y + 55), (100, 220, 255), 2, cv2.LINE_AA)
+        # Bubble pointer
+        cv2.fillPoly(canvas, [np.array([
+            [bubble_x + 140, bubble_y + 55],
+            [bubble_x + 165, bubble_y + 55],
+            [bubble_x + 130, bubble_y + 75]
+        ], dtype=np.int32)], (28, 22, 34), cv2.LINE_AA)
+
+        # 8 Bouncing Equalizer Bars
+        for bi in range(8):
+            bar_bx = bubble_x + 20 + bi * 22
+            jitter = math.sin(t * 18 + bi * 1.5) * 6
+            bar_bh = int(max(4, lip_sync_energy * 34 + jitter))
+            bar_col = (60, 240, 120) if bi % 3 == 0 else ((80, 220, 255) if bi % 3 == 1 else (60, 180, 240))
+            cv2.rectangle(canvas, (bar_bx, bubble_y + 44 - bar_bh), (bar_bx + 12, bubble_y + 44), bar_col, -1)
 
         # Character Badge / Nameplate
         badge_y = char_y + 240
-        cv2.rectangle(canvas, (char_x - 85, badge_y - 14), (char_x + 85, badge_y + 14), (20, 25, 35), -1)
-        cv2.rectangle(canvas, (char_x - 85, badge_y - 14), (char_x + 85, badge_y + 14), (60, 150, 240), 1, cv2.LINE_AA)
-        cv2.putText(canvas, "AI PRESENTER", (char_x - 68, badge_y + 5), cv2.FONT_HERSHEY_DUPLEX, 0.52, (240, 240, 255), 1, cv2.LINE_AA)
+        cv2.rectangle(canvas, (char_x - 90, badge_y - 14), (char_x + 90, badge_y + 14), (20, 25, 35), -1)
+        cv2.rectangle(canvas, (char_x - 90, badge_y - 14), (char_x + 90, badge_y + 14), (60, 150, 240), 1, cv2.LINE_AA)
+        cv2.putText(canvas, "AI PRESENTER // BRIXY", (char_x - 82, badge_y + 5), 
+                    cv2.FONT_HERSHEY_DUPLEX, 0.48, (240, 240, 255), 1, cv2.LINE_AA)
 
     async def fetch_pexels_clip(self, query: str, duration: float) -> Optional[FootageClip]:
         """Queries Pexels stock video API with commercial license tracking."""
@@ -432,7 +1001,7 @@ class FootageManager:
                 for v in videos:
                     v_id = f"pexels_{v['id']}"
                     if v_id in self.used_clip_ids:
-                        continue # Strict zero duplicates rule
+                        continue
                     
                     files = v.get("video_files", [])
                     best_file = None
@@ -513,7 +1082,10 @@ class FootageManager:
         search_query: str,
         duration: float,
         style: str,
-        preferred_source: Optional[str] = None
+        preferred_source: Optional[str] = None,
+        audio_path: Optional[Path] = None,
+        start_time: float = 0.0,
+        scene_text: str = ""
     ) -> FootageClip:
         """
         Dual-source selector implementing the Advanced Level Requirement:
@@ -531,9 +1103,19 @@ class FootageManager:
             if clip:
                 return clip
 
-        # Fallback / Dual source: Generative Kinetic Motion Engine
-        gen_path = self.cache_dir / f"scene_{scene_index}_{hashlib.md5(search_query.encode()).hexdigest()[:8]}.mp4"
-        clip = self.generate_procedural_broll(search_query, duration, gen_path, style)
+        # Fallback / Dual source: Generative Kinetic Motion Engine with Lip Sync
+        # Unique cache key per scene query and scene text to ensure full content reactivity
+        unique_seed = f"{scene_index}_{search_query}_{scene_text}"
+        gen_path = self.cache_dir / f"scene_{scene_index}_{hashlib.md5(unique_seed.encode()).hexdigest()[:8]}.mp4"
+        clip = self.generate_procedural_broll(
+            query=search_query,
+            duration=duration,
+            output_path=gen_path,
+            style=style,
+            audio_path=audio_path,
+            start_time=start_time,
+            scene_text=scene_text
+        )
         self.used_clip_ids.add(clip.clip_id)
         return clip
 

@@ -115,10 +115,29 @@ class JobManager:
             urllib.request.urlretrieve(req["audio_url"], str(audio_file))
         elif req.get("local_audio_path"):
             audio_file = Path(req["local_audio_path"])
+        elif req.get("scenes") and len(req["scenes"]) > 0:
+            # Synthesize narration speech directly from the structured scene list
+            combined_script = " ".join(
+                s.get("narration") or s.get("text", "") 
+                for s in req["scenes"] 
+                if (s.get("narration") or s.get("text"))
+            ).strip()
+            if not combined_script:
+                raise AudioEngineException(
+                    code="EMPTY_SCENE_NARRATIONS",
+                    message="Structured scenes must contain at least one non-empty 'narration' or 'text' field.",
+                    retryable=False
+                )
+            audio_file = job_dir / "narration.mp3"
+            await audio_engine.synthesize_speech(
+                text=combined_script,
+                voice_pref=req.get("voice"),
+                output_path=audio_file
+            )
         else:
             raise AudioEngineException(
                 code="MISSING_INPUT_CONTENT",
-                message="Either 'script', 'audio_url', or uploaded audio file must be provided.",
+                message="Either 'script', 'audio_url', uploaded audio file, or 'scenes' with narration must be provided.",
                 retryable=False
             )
 
@@ -157,7 +176,10 @@ class JobManager:
                 scene_index=idx,
                 search_query=scene["search_query"],
                 duration=scene["duration"],
-                style=req.get("style", "bright, modern")
+                style=req.get("style", "bright, modern"),
+                audio_path=audio_file,
+                start_time=scene["start_time"],
+                scene_text=scene["narration"]
             )
             raw_clip_paths.append(clip.local_path)
             
@@ -285,7 +307,10 @@ class JobManager:
             search_query=query,
             duration=duration,
             style=state.request_data.get("style", "bright, modern"),
-            preferred_source=preferred_source
+            preferred_source=preferred_source,
+            audio_path=state.audio_path,
+            start_time=scene["start_time"],
+            scene_text=scene["narration"]
         )
         scene["clip_used"] = new_clip.to_dict()
         scene["search_query"] = query

@@ -56,9 +56,9 @@ class VideoRenderer:
         # eq=brightness=0.02:contrast=1.05:saturation=1.1
         color_filter = "eq=brightness=0.02:contrast=1.05:saturation=1.08"
 
-        if aspect_ratio == "9:16":
-            # Smart Composition for 9:16 (avoids edge subject cutoff):
-            # Background is blurred 9:16 scaled crop, foreground is fitted aspect
+        if aspect_ratio in ["9:16", "1:1"]:
+            # Smart Composition for non-16:9 ratios (avoids edge subject cutoff):
+            # Background is blurred scaled crop, foreground is fitted aspect
             filter_complex = (
                 f"[0:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
                 f"boxblur=25:5,{color_filter}[bg];"

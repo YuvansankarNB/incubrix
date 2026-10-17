@@ -162,6 +162,7 @@ function initFormSubmit() {
         } else if (activeTab === 'tab-scenes') {
           try {
             payload.scenes = JSON.parse(document.getElementById('scenes-json').value);
+            payload.voice = document.getElementById('tts-voice').value;
           } catch (e) {
             alert("Invalid JSON format in custom scenes.");
             setLoadingState(false);

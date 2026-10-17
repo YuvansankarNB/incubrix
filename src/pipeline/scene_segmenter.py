@@ -72,7 +72,7 @@ class SceneSegmenter:
             for i, item in enumerate(explicit_scenes):
                 start = round(i * scene_duration, 2)
                 end = round((i + 1) * scene_duration, 2) if i < num_scenes - 1 else total_audio_duration
-                raw_text = item.get("text", "")
+                raw_text = item.get("narration") or item.get("text", "")
                 hint = item.get("visual_hint", "")
                 
                 query, rationale = self._resolve_visual_query(raw_text, hint, avoid, style)
