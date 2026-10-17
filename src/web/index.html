@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IncuBrix — Script & Voiceover to B-Roll Video Engine</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-logo">IB</div>
+        <div>
+          <h1>IncuBrix</h1>
+          <span class="subtitle">B-Roll Video Engine</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="badge badge-success" id="service-status">● Engine Ready</span>
+        <a href="/docs" target="_blank" class="nav-btn">API Docs (OpenAPI)</a>
+        <a href="/health" target="_blank" class="nav-btn">Health</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    <div class="grid-layout">
+      <!-- Left Column: Input Form -->
+      <section class="card input-card">
+        <div class="card-header">
+          <h2>1. Input & Directives</h2>
+          <span class="step-hint">Provide audio or script</span>
+        </div>
+
+        <!-- Input Mode Tabs -->
+        <div class="tab-group">
+          <button class="tab-btn active" data-tab="tab-script">Text Script</button>
+          <button class="tab-btn" data-tab="tab-audio">Audio File / URL</button>
+          <button class="tab-btn" data-tab="tab-scenes">IncuBrix Scenes</button>
+        </div>
+
+        <!-- Tab 1: Text Script -->
+        <div class="tab-content active" id="tab-script">
+          <div class="form-group">
+            <label for="script-text">Narration Script</label>
+            <textarea id="script-text" rows="5" placeholder="Enter your script here... Example:
+In 2025, our corporate sales grew 40% across all markets. We built our success on trust and cloud data resilience. Every smart investment begins with patience."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="tts-voice">Voiceover Voice (Multi-lingual)</label>
+            <select id="tts-voice">
+              <option value="en-US-AriaNeural">English (US) — Aria (Neural)</option>
+              <option value="en-IN-female">English (India) — Neerja</option>
+              <option value="en-IN-male">English (India) — Prabhat</option>
+              <option value="hi-IN-female">Hindi — Swara (Neural)</option>
+              <option value="hi-IN-male">Hindi — Madhur (Neural)</option>
+              <option value="ta-IN-female">Tamil — Pallavi (Neural)</option>
+              <option value="ta-IN-male">Tamil — Valluvar (Neural)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tab 2: Audio File / URL -->
+        <div class="tab-content" id="tab-audio">
+          <div class="form-group">
+            <label for="audio-upload">Upload Voiceover Audio (.mp3, .wav, .m4a)</label>
+            <input type="file" id="audio-upload" accept="audio/mp3,audio/wav,audio/m4a,audio/*">
+          </div>
+          <div class="form-divider"><span>OR</span></div>
+          <div class="form-group">
+            <label for="audio-url">Audio HTTP URL</label>
+            <input type="url" id="audio-url" placeholder="https://example.com/voiceover.mp3">
+          </div>
+        </div>
+
+        <!-- Tab 3: IncuBrix Scenes -->
+        <div class="tab-content" id="tab-scenes">
+          <div class="form-group">
+            <label for="scenes-json">Custom Scene List (JSON format)</label>
+            <textarea id="scenes-json" rows="6" class="code-font">[
+  {
+    "text": "Sales grew 40% in 2025 across all sectors.",
+    "visual_hint": "Modern financial growth analytics dashboard on tablet"
+  },
+  {
+    "text": "Our engineering relies on automated cloud computing.",
+    "visual_hint": "High-tech data center server room glowing blue LED racks"
+  },
+  {
+    "text": "True partnership and trust is earned slowly.",
+    "visual_hint": "Professional business handshake in modern office sunlight"
+  }
+]</textarea>
+          </div>
+        </div>
+
+        <!-- Video Settings -->
+        <div class="card-divider"></div>
+        <div class="card-header">
+          <h2>2. Video Customization</h2>
+          <span class="step-hint">Ratios & Visual Aesthetics</span>
+        </div>
+
+        <div class="form-group">
+          <label>Aspect Ratios to Render</label>
+          <div class="checkbox-group">
+            <label class="checkbox-pill">
+              <input type="checkbox" id="ratio-16-9" value="16:9" checked>
+              <span>16:9 (Landscape)</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" id="ratio-9-16" value="9:16" checked>
+              <span>9:16 (Shorts / Reels)</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" id="ratio-1-1" value="1:1">
+              <span>1:1 (Square)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="video-style">Visual Style Guidance</label>
+          <input type="text" id="video-style" value="bright, modern, real-world footage">
+        </div>
+
+        <div class="form-group">
+          <label for="avoid-keywords">Avoid Content / Words (comma separated)</label>
+          <input type="text" id="avoid-keywords" placeholder="people's faces, alcohol, weapons" value="people's faces, alcohol">
+        </div>
+
+        <div class="form-group">
+          <label>Captions</label>
+          <div class="checkbox-group">
+            <label class="checkbox-pill">
+              <input type="checkbox" id="burn-in-captions" checked>
+              <span>Burn-in Subtitles on Video</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" id="generate-srt" checked disabled>
+              <span>Export .srt Subtitles</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-generate" class="btn btn-primary btn-block">
+          <span id="btn-text">Generate B-Roll Video</span>
+          <span id="btn-spinner" class="spinner hidden"></span>
+        </button>
+      </section>
+
+      <!-- Right Column: Live Monitor & Video Output -->
+      <section class="card output-card">
+        <div class="card-header">
+          <h2>3. Video Output & Timeline</h2>
+          <span class="status-indicator" id="job-status-badge">Idle</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-section" id="progress-container">
+          <div class="progress-labels">
+            <span id="progress-step-text">Waiting to start...</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Video Player Display -->
+        <div class="player-wrapper hidden" id="video-player-wrapper">
+          <div class="ratio-switcher" id="ratio-buttons">
+            <!-- Buttons dynamically inserted: 16:9, 9:16, 1:1 -->
+          </div>
+          <div class="video-container">
+            <video id="main-video" controls playsinline></video>
+          </div>
+          <div class="video-actions">
+            <a id="btn-download-video" class="btn btn-secondary" download>Download Video</a>
+            <a id="btn-download-srt" class="btn btn-secondary" download>Download .SRT</a>
+          </div>
+        </div>
+
+        <!-- Interactive Scene Timeline -->
+        <div class="timeline-container hidden" id="timeline-container">
+          <h3>Scene Timeline & Provenance</h3>
+          <p class="section-desc">Every scene is timed to the voice. Review relevance, commercial license, and swap clips on the fly.</p>
+          <div class="scene-list" id="scene-list">
+            <!-- Dynamically populated scene cards -->
+          </div>
+        </div>
+
+        <!-- Inspection Tabs (Timeline / SRT / Manifest) -->
+        <div class="inspect-section hidden" id="inspect-section">
+          <div class="inspect-tabs">
+            <button class="inspect-tab-btn active" data-inspect="inspect-manifest">Manifest (JSON)</button>
+            <button class="inspect-tab-btn" data-inspect="inspect-timeline">Timeline (JSON)</button>
+            <button class="inspect-tab-btn" data-inspect="inspect-srt">Captions (.SRT)</button>
+          </div>
+          <div class="inspect-body">
+            <pre id="inspect-content" class="code-font">Manifest will appear here...</pre>
+          </div>
+        </div>
+
+        <!-- Empty State Prompt -->
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🎬</div>
+          <h3>No Video Generated Yet</h3>
+          <p>Fill out the script or upload an audio file on the left, then click <strong>Generate B-Roll Video</strong> to produce your first license-clean video.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Swap Clip Modal -->
+  <div class="modal hidden" id="swap-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Swap Clip for Scene <span id="swap-scene-idx">0</span></h3>
+        <button class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Narration: <em id="swap-scene-narration"></em></p>
+        <div class="form-group">
+          <label for="swap-query">New Visual Search Query / Description</label>
+          <input type="text" id="swap-query" placeholder="e.g. Modern futuristic skyline timelapse">
+        </div>
+        <div class="form-group">
+          <label for="swap-source">Footage Provider Source</label>
+          <select id="swap-source">
+            <option value="auto">Auto (Rule-Based)</option>
+            <option value="pexels">Pexels Stock Library</option>
+            <option value="pixabay">Pixabay Stock Library</option>
+            <option value="ai_gen">IncuBrix Generative Synthesis</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-cancel-swap">Cancel</button>
+        <button class="btn btn-primary" id="btn-confirm-swap">Fast Re-Render Scene</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
