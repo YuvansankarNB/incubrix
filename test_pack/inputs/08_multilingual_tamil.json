@@ -1,0 +1,8 @@
+{
+  "script": "செயற்கை நுண்ணறிவு மூலம் காணொளிகளை உருவாக்குவது இப்போது மிக எளிது. உங்கள் படைப்பாற்றலை அடுத்த கட்டத்திற்கு கொண்டு செல்லுங்கள்.",
+  "aspect_ratios": ["16:9"],
+  "voice": "ta-IN-female",
+  "style": "cinematic vibrant creative studio",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

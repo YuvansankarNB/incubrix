@@ -1,0 +1,8 @@
+{
+  "script": "तकनीक और नवाचार की दुनिया में आपका स्वागत है। हमारा उद्देश्य रचनाकारों को शक्तिशाली वीडियो बनाने में सहायता करना है।",
+  "aspect_ratios": ["16:9"],
+  "voice": "hi-IN-female",
+  "style": "bright modern digital studio",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

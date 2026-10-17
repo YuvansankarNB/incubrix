@@ -1,0 +1,8 @@
+{
+  "script": "Saving money is one of the most powerful habits you can build. When you deposit funds into a high yield savings bank, compound interest works quietly in your favor.",
+  "aspect_ratios": ["16:9"],
+  "voice": "en-US-AriaNeural",
+  "style": "clean, corporate, modern financial graphics",
+  "avoid": ["people's faces"],
+  "captions": {"burn_in": true, "srt": true}
+}

@@ -1,0 +1,8 @@
+{
+  "script": "Python is the most popular programming language for artificial intelligence. Developers write automated scripts and clean machine learning pipelines with ease.",
+  "aspect_ratios": ["16:9"],
+  "voice": "en-US-AriaNeural",
+  "style": "clean modern software engineering, coding screen",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

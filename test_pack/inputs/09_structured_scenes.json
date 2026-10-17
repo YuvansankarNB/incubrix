@@ -1,0 +1,21 @@
+{
+  "scenes": [
+    {
+      "text": "Every business journey starts with a clear financial plan.",
+      "visual_hint": "Architectural drawing of modern skyscrapers and financial center"
+    },
+    {
+      "text": "Continuous cloud backups ensure your data is always protected.",
+      "visual_hint": "Modern data center server rack with glowing blue optical fibers"
+    },
+    {
+      "text": "Collaboration brings global teams together.",
+      "visual_hint": "Diverse engineering team meeting in bright conference room"
+    }
+  ],
+  "aspect_ratios": ["16:9", "9:16"],
+  "voice": "en-US-AriaNeural",
+  "style": "cinematic 4k corporate video",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

@@ -1,0 +1,8 @@
+{
+  "script": "Introducing our next-generation developer platform. Build lightning fast microservices, monitor latency in real time, and deploy globally in seconds.",
+  "aspect_ratios": ["16:9"],
+  "voice": "en-US-AriaNeural",
+  "style": "sleek, modern tech software product promo",
+  "avoid": ["alcohol"],
+  "captions": {"burn_in": true, "srt": true}
+}

@@ -1,0 +1,8 @@
+{
+  "script": "Trust is earned slowly, one small commitment at a time. When challenges arise, resilient teams rely on clear communication and mutual faith.",
+  "aspect_ratios": ["16:9"],
+  "voice": "en-US-AriaNeural",
+  "style": "warm, cinematic storytelling, golden hour office",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

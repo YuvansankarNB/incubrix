@@ -1,0 +1,8 @@
+{
+  "script": "Corporate earnings reports confirm that sales grew 40% in 2025. Industry leaders attribute this expansion to strong market demand and digital transformation.",
+  "aspect_ratios": ["16:9", "9:16"],
+  "voice": "en-IN-female",
+  "style": "broadcast news, cinematic corporate",
+  "avoid": [],
+  "captions": {"burn_in": true, "srt": true}
+}

@@ -1,0 +1,8 @@
+{
+  "script": "Three quick productivity hacks for creators. First, schedule your deep focus sessions. Second, automate your video rendering. Third, celebrate small wins every day.",
+  "aspect_ratios": ["9:16", "1:1"],
+  "voice": "en-IN-female",
+  "style": "dynamic vertical reels vibrant aesthetic",
+  "avoid": ["alcohol"],
+  "captions": {"burn_in": true, "srt": true}
+}

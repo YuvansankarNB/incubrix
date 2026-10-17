@@ -1,0 +1,8 @@
+{
+  "script": "Modern cloud computing infrastructure powers millions of servers. Our distributed clusters provide high availability and zero downtime data backups.",
+  "aspect_ratios": ["16:9"],
+  "voice": "en-US-AriaNeural",
+  "style": "high tech server room, blue neon data center",
+  "avoid": ["people's faces"],
+  "captions": {"burn_in": true, "srt": true}
+}
