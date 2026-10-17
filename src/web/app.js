@@ -1,4 +1,4 @@
-// IncuBrix Web Engine Controller (Vanilla JS)
+// IncuBrix Web Engine Controller (Light Professional UI)
 
 let currentJobId = null;
 let currentOutputs = null;
@@ -10,18 +10,20 @@ let selectedSwapIndex = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
+  initPresets();
   initFormSubmit();
   initModal();
   initInspectTabs();
+  initFileUploadUI();
 });
 
 // 1. Tab Navigation
 function initTabs() {
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(btn => {
+  const segBtns = document.querySelectorAll('.seg-btn');
+  segBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      segBtns.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
       
       btn.classList.add('active');
       const target = document.getElementById(btn.getAttribute('data-tab'));
@@ -30,11 +32,64 @@ function initTabs() {
   });
 }
 
-// 2. Form Submission & Job Dispatch
+// 2. Preset Quick Fill
+function initPresets() {
+  const selectTab = (tabId) => {
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
+    const btn = document.querySelector(`.seg-btn[data-tab="${tabId}"]`);
+    if (btn) btn.classList.add('active');
+    const pane = document.getElementById(tabId);
+    if (pane) pane.classList.add('active');
+  };
+
+  document.getElementById('preset-finance')?.addEventListener('click', () => {
+    selectTab('tab-script');
+    document.getElementById('script-text').value = 
+      "In 2025, our corporate sales grew 40% across all markets. When you deposit capital into a high yield savings bank, compound interest works quietly in your favor. Every smart investment begins with patience.";
+    document.getElementById('tts-voice').value = "en-US-AriaNeural";
+  });
+
+  document.getElementById('preset-cloud')?.addEventListener('click', () => {
+    selectTab('tab-script');
+    document.getElementById('script-text').value = 
+      "Modern cloud computing infrastructure powers millions of servers globally. Our distributed clusters guarantee zero downtime, automated failovers, and resilient data backups.";
+    document.getElementById('tts-voice').value = "en-US-AriaNeural";
+  });
+
+  document.getElementById('preset-hindi')?.addEventListener('click', () => {
+    selectTab('tab-script');
+    document.getElementById('script-text').value = 
+      "तकनीक और नवाचार की दुनिया में आपका स्वागत है। हमारा उद्देश्य रचनाकारों को कृत्रिम बुद्धिमत्ता के साथ शक्तिशाली वीडियो बनाने में सहायता करना है।";
+    document.getElementById('tts-voice').value = "hi-IN-female";
+  });
+
+  document.getElementById('preset-tamil')?.addEventListener('click', () => {
+    selectTab('tab-script');
+    document.getElementById('script-text').value = 
+      "செயற்கை நுண்ணறிவு மூலம் காணொளிகளை உருவாக்குவது இப்போது மிக எளிது. உங்கள் படைப்பாற்றலை அடுத்த கட்டத்திற்கு கொண்டு செல்லுங்கள்.";
+    document.getElementById('tts-voice').value = "ta-IN-female";
+  });
+}
+
+// File upload box UI helper
+function initFileUploadUI() {
+  const uploadInput = document.getElementById('audio-upload');
+  const label = document.getElementById('upload-filename');
+  if (uploadInput && label) {
+    uploadInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        label.textContent = e.target.files[0].name;
+      }
+    });
+  }
+}
+
+// 3. Form Submission & Job Dispatch
 function initFormSubmit() {
   const btn = document.getElementById('btn-generate');
   btn.addEventListener('click', async () => {
-    const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
+    const activeTab = document.querySelector('.seg-btn.active').getAttribute('data-tab');
     const aspectRatios = [];
     if (document.getElementById('ratio-16-9').checked) aspectRatios.push("16:9");
     if (document.getElementById('ratio-9-16').checked) aspectRatios.push("9:16");
@@ -81,10 +136,20 @@ function initFormSubmit() {
         };
 
         if (activeTab === 'tab-script') {
-          payload.script = document.getElementById('script-text').value;
+          payload.script = document.getElementById('script-text').value.trim();
           payload.voice = document.getElementById('tts-voice').value;
+          if (!payload.script) {
+            alert("Please enter a text script or click a quick preset.");
+            setLoadingState(false);
+            return;
+          }
         } else if (activeTab === 'tab-audio') {
-          payload.audio_url = document.getElementById('audio-url').value;
+          payload.audio_url = document.getElementById('audio-url').value.trim();
+          if (!payload.audio_url) {
+            alert("Please provide an audio URL or upload an audio file.");
+            setLoadingState(false);
+            return;
+          }
         } else if (activeTab === 'tab-scenes') {
           try {
             payload.scenes = JSON.parse(document.getElementById('scenes-json').value);
@@ -128,15 +193,16 @@ function setLoadingState(loading) {
     txt.textContent = "Processing Job...";
     spinner.classList.remove('hidden');
     document.getElementById('empty-state').classList.add('hidden');
-    document.getElementById('job-status-badge').textContent = "Running";
-    document.getElementById('job-status-badge').className = "status-indicator badge badge-warning";
+    const badge = document.getElementById('job-status-badge');
+    badge.textContent = "Running";
+    badge.className = "status-badge badge-running";
   } else {
     txt.textContent = "Generate B-Roll Video";
     spinner.classList.add('hidden');
   }
 }
 
-// 3. Polling for Job Completion
+// 4. Polling for Job Completion
 function startPolling(jobId) {
   if (pollTimer) clearInterval(pollTimer);
 
@@ -151,14 +217,16 @@ function startPolling(jobId) {
       if (job.status === 'succeeded') {
         clearInterval(pollTimer);
         setLoadingState(false);
-        document.getElementById('job-status-badge').textContent = "Succeeded";
-        document.getElementById('job-status-badge').className = "status-indicator badge badge-success";
+        const badge = document.getElementById('job-status-badge');
+        badge.textContent = "Succeeded";
+        badge.className = "status-badge badge-success";
         renderResults(job.outputs);
       } else if (job.status === 'failed') {
         clearInterval(pollTimer);
         setLoadingState(false);
-        document.getElementById('job-status-badge').textContent = "Failed";
-        document.getElementById('job-status-badge').className = "status-indicator badge badge-danger";
+        const badge = document.getElementById('job-status-badge');
+        badge.textContent = "Failed";
+        badge.className = "status-badge badge-danger";
         const errMsg = job.error ? `${job.error.code}: ${job.error.message}` : "Job failed.";
         alert("Job execution failed: " + errMsg);
       }
@@ -174,7 +242,7 @@ function updateProgress(percent, label) {
   document.getElementById('progress-step-text').textContent = label;
 }
 
-// 4. Render Video & Outputs
+// 5. Render Video & Outputs
 async function renderResults(outputs) {
   currentOutputs = outputs;
   document.getElementById('video-player-wrapper').classList.remove('hidden');
@@ -188,10 +256,10 @@ async function renderResults(outputs) {
 
   videoKeys.forEach((key, idx) => {
     const btn = document.createElement('button');
-    btn.className = `ratio-btn ${idx === 0 ? 'active' : ''}`;
+    btn.className = `ratio-tab-btn ${idx === 0 ? 'active' : ''}`;
     btn.textContent = key;
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.ratio-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadVideo(outputs.videos[key]);
     });
@@ -230,7 +298,7 @@ function loadVideo(url) {
   document.getElementById('btn-download-video').href = url;
 }
 
-// 5. Timeline Cards & Provenance Display
+// 6. Timeline Cards & Provenance Display
 function renderTimelineCards(scenes) {
   const list = document.getElementById('scene-list');
   list.innerHTML = '';
@@ -238,25 +306,25 @@ function renderTimelineCards(scenes) {
   scenes.forEach(s => {
     const clip = s.clip_used || {};
     const card = document.createElement('div');
-    card.className = 'scene-card';
+    card.className = 'scene-item-card';
 
     const aiChip = clip.is_ai_generated 
-      ? `<span class="meta-chip ai-chip">AI Generated</span>` 
-      : `<span class="meta-chip">Stock Footage</span>`;
+      ? `<span class="tag tag-ai">AI Synthesized</span>` 
+      : `<span class="tag tag-stock">Stock Footage</span>`;
 
     card.innerHTML = `
-      <div class="scene-time-pill">${s.start_time}s – ${s.end_time}s</div>
-      <div class="scene-info">
-        <div class="scene-narration">"${s.narration}"</div>
-        <div class="scene-meta">
+      <div class="time-badge">${s.start_time}s – ${s.end_time}s</div>
+      <div class="scene-detail">
+        <div class="scene-speech">"${s.narration}"</div>
+        <div class="meta-tags">
           ${aiChip}
-          <span class="meta-chip score-chip">Relevance: ${clip.relevance_score || '4.5'}/5</span>
-          <span class="meta-chip">Source: ${clip.source || 'Standard Library'}</span>
-          <span class="meta-chip">License: ${clip.license || 'Commercial Free'}</span>
+          <span class="tag tag-score">Relevance: ${clip.relevance_score || '4.5'}/5</span>
+          <span class="tag tag-license">${clip.source || 'Commercial Library'}</span>
+          <span class="tag tag-license">${clip.license || 'Commercial Free'}</span>
         </div>
       </div>
       <div>
-        <button class="btn-swap" onclick="openSwapModal(${s.scene_index}, '${escapeQuotes(s.narration)}')">Swap Clip</button>
+        <button class="btn-swap-clip" onclick="openSwapModal(${s.scene_index}, '${escapeQuotes(s.narration)}')">Swap Clip</button>
       </div>
     `;
     list.appendChild(card);
@@ -267,7 +335,7 @@ function escapeQuotes(str) {
   return (str || '').replace(/'/g, "\\'");
 }
 
-// 6. Clip Swapping Modal Logic
+// 7. Clip Swapping Modal Logic
 function initModal() {
   const modal = document.getElementById('swap-modal');
   document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.add('hidden'));
@@ -318,9 +386,9 @@ window.openSwapModal = function(sceneIdx, narration) {
   document.getElementById('swap-modal').classList.remove('hidden');
 };
 
-// 7. Inspect Tab Switcher
+// 8. Inspect Tab Switcher
 function initInspectTabs() {
-  const btns = document.querySelectorAll('.inspect-tab-btn');
+  const btns = document.querySelectorAll('.inspect-btn');
   btns.forEach(btn => {
     btn.addEventListener('click', async () => {
       btns.forEach(b => b.classList.remove('active'));
