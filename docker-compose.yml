@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  incubrix-engine:
+    build: .
+    container_name: incubrix_broll_engine
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - SECRET_KEY=incubrix-compose-secret-key-production
+      - LOCAL_STORAGE_DIR=/app/data/storage
+      - STORAGE_MODE=local
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
