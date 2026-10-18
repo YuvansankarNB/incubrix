@@ -56,7 +56,8 @@ class SceneSegmenter:
         total_audio_duration: float,
         explicit_scenes: Optional[List[Dict[str, Any]]] = None,
         avoid_list: Optional[List[str]] = None,
-        style: str = "bright, modern, real-world footage"
+        style: str = "bright, modern, real-world footage",
+        dialogue_turns: Optional[List[Dict[str, Any]]] = None
     ) -> List[Dict[str, Any]]:
         """
         Segments speech into continuous non-overlapping scenes timed strictly to narration.
@@ -64,6 +65,42 @@ class SceneSegmenter:
         """
         scenes = []
         avoid = [a.lower().strip() for a in (avoid_list or [])]
+
+        # 1. Dialogue Turns Segmentation (Doctor-Patient, Multi-Character)
+        if dialogue_turns and len(dialogue_turns) > 0:
+            num_turns = len(dialogue_turns)
+            has_durations = all("duration" in t and t.get("duration", 0) > 0 for t in dialogue_turns)
+            accum_t = 0.0
+            for i, turn in enumerate(dialogue_turns):
+                if has_durations:
+                    start = turn.get("start_time", round(accum_t, 2))
+                    dur = turn.get("duration", 2.0)
+                    end = turn.get("end_time", round(start + dur, 2))
+                    accum_t = end
+                    if i == num_turns - 1:
+                        end = max(end, total_audio_duration)
+                        dur = round(end - start, 2)
+                else:
+                    scene_duration = total_audio_duration / num_turns
+                    start = round(i * scene_duration, 2)
+                    end = round((i + 1) * scene_duration, 2) if i < num_turns - 1 else total_audio_duration
+                    dur = round(end - start, 2)
+
+                raw_text = turn.get("text", "")
+                speaker = turn.get("speaker", "")
+                query, rationale = self._resolve_visual_query(raw_text, None, avoid, style)
+                scenes.append({
+                    "scene_index": i,
+                    "speaker": speaker,
+                    "narration": raw_text,
+                    "start_time": start,
+                    "end_time": end,
+                    "duration": dur,
+                    "visual_hint": f"Dialogue scene: {speaker}",
+                    "search_query": query,
+                    "selection_rationale": f"Dialogue turn for {speaker}: {rationale}"
+                })
+            return scenes
 
         if explicit_scenes and len(explicit_scenes) > 0:
             # Map explicit scene inputs to speech duration evenly or by keyword match
@@ -73,12 +110,14 @@ class SceneSegmenter:
                 start = round(i * scene_duration, 2)
                 end = round((i + 1) * scene_duration, 2) if i < num_scenes - 1 else total_audio_duration
                 raw_text = item.get("narration") or item.get("text", "")
+                # Strip any speaker label prefix so narration is clean
+                clean_text = re.sub(r'^\s*(?:\[|\()?([A-Za-z0-9\.\s_]{2,25}?)(?:\]|\))?\s*:\s*', '', raw_text).strip()
                 hint = item.get("visual_hint", "")
                 
-                query, rationale = self._resolve_visual_query(raw_text, hint, avoid, style)
+                query, rationale = self._resolve_visual_query(clean_text or raw_text, hint, avoid, style)
                 scenes.append({
                     "scene_index": i,
-                    "narration": raw_text,
+                    "narration": clean_text or raw_text,
                     "start_time": start,
                     "end_time": end,
                     "duration": round(end - start, 2),

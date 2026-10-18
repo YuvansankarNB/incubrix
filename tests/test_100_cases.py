@@ -588,3 +588,60 @@ def test_drama_hospital_theme_and_strict_single_character_lipsync():
     assert energy_active == 0.65
     assert energy_listener == 0.0
 
+def test_strip_speaker_prefixes_and_dialogue_turns():
+    """Verify that speaker prefixes (Doctor:, Patient:, etc.) are stripped so they are never spoken."""
+    from src.pipeline.audio_engine import AudioEngine
+
+    script = (
+        "Doctor: The latest lab reports just came in, and I wanted to discuss the numbers with you directly.\n"
+        "Patient: Please be honest with me, Doctor. Does this mean I need immediate surgery?\n"
+        "Doctor: Take a deep breath. While the inflammation is elevated, we caught this early enough that targeted medication can fully reverse it.\n"
+        "Patient: That is such a relief to hear. What lifestyle adjustments must I begin making today?\n"
+        "Doctor: Start with thirty minutes of light walking daily and follow the nutrition guidelines we prepared. You are going to recover completely."
+    )
+
+    cleaned = AudioEngine.strip_speaker_prefixes(script)
+    # Check that speaker prefixes at the start of lines are removed
+    assert not cleaned.startswith("Doctor:")
+    assert "Doctor: The latest lab reports" not in cleaned
+    assert "Patient: Please be honest" not in cleaned
+    # Check that the dialogue itself is intact
+    assert "The latest lab reports just came in" in cleaned
+    assert "Please be honest with me, Doctor. Does this mean I need immediate surgery?" in cleaned
+
+    # Check parse_dialogue_turns
+    turns = AudioEngine.parse_dialogue_turns(script)
+    assert len(turns) == 5
+    assert turns[0]["speaker"] == "Doctor"
+    assert turns[0]["text"] == "The latest lab reports just came in, and I wanted to discuss the numbers with you directly."
+    assert turns[1]["speaker"] == "Patient"
+    assert turns[1]["text"] == "Please be honest with me, Doctor. Does this mean I need immediate surgery?"
+    assert turns[2]["speaker"] == "Doctor"
+    assert turns[3]["speaker"] == "Patient"
+    assert turns[4]["speaker"] == "Doctor"
+
+def test_dialogue_turns_scene_segmentation():
+    """Verify that dialogue turns correctly produce timed scenes without speaker prefixes."""
+    from src.pipeline.scene_segmenter import SceneSegmenter
+
+    turns = [
+        {"speaker": "Doctor", "text": "The latest lab reports just came in.", "duration": 3.5, "start_time": 0.0, "end_time": 3.5},
+        {"speaker": "Patient", "text": "Please be honest with me, Doctor.", "duration": 2.8, "start_time": 3.5, "end_time": 6.3}
+    ]
+
+    segmenter = SceneSegmenter()
+    scenes = segmenter.segment_words_into_scenes(
+        words=[],
+        total_audio_duration=6.3,
+        dialogue_turns=turns
+    )
+
+    assert len(scenes) == 2
+    assert scenes[0]["speaker"] == "Doctor"
+    assert scenes[0]["narration"] == "The latest lab reports just came in."
+    assert scenes[0]["duration"] == 3.5
+    assert scenes[1]["speaker"] == "Patient"
+    assert scenes[1]["narration"] == "Please be honest with me, Doctor."
+    assert scenes[1]["duration"] == 2.8
+
+

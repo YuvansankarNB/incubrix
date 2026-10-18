@@ -122,7 +122,9 @@ class FootageManager:
         audio_path: Optional[Path] = None,
         start_time: float = 0.0,
         scene_text: str = "",
-        character_type: str = "human"
+        character_type: str = "human",
+        scene_speaker: Optional[str] = None,
+        scene_index: int = 0
     ) -> FootageClip:
         """
         Synthesizes high-impact, content-driven animated B-roll clips:
@@ -905,7 +907,9 @@ class FootageManager:
                 theme=theme_mode,
                 lip_sync_energy=lip_sync_energy,
                 scene_text=scene_text,
-                character_type=character_type
+                character_type=character_type,
+                scene_speaker=scene_speaker,
+                scene_index=scene_index
             )
 
             # Watermark-free clean footer timecode
@@ -1102,7 +1106,9 @@ class FootageManager:
         lip_sync_energy: float,
         scene_text: str,
         char1_name: str,
-        char2_name: str
+        char2_name: str,
+        scene_speaker: Optional[str] = None,
+        scene_index: int = 0
     ):
         """
         Renders a two-character dramatic discussion / dialogue scene.
@@ -1110,31 +1116,47 @@ class FootageManager:
         Character 2 sits on the right (cx ≈ 0.80 * width).
         STRICT LIP-SYNC: ONLY the currently speaking character moves their mouth and displays
         an audio equalizer speech bubble. The listening character has ZERO mouth motion.
+        NOTE: No character names (like 'Doctor' or 'Patient') are mentioned or printed on screen.
         """
         fn1, tag1 = self._get_char_renderer(char1_name, theme)
         fn2, tag2 = self._get_char_renderer(char2_name, theme)
         if fn1 == fn2 and tag1.lower() == "human":
-            # Differentiate two generic humans in dialogue
             fn2 = self._char_engineer
             tag2 = "Engineer"
 
-        # Determine active speaker using scene_text dialogue cues
+        # Determine active speaker using scene_speaker, dialogue cues, or turn-taking
         txt_lower = (scene_text or "").lower().strip()
         c1_tokens = [char1_name.lower(), tag1.lower(), "doctor", "dr.", "dr:", "alex", "king", "speaker 1", "first"]
         c2_tokens = [char2_name.lower(), tag2.lower(), "patient", "morgan", "nova", "advisor", "speaker 2", "second"]
 
-        c1_matches = any(tok in txt_lower[:35] for tok in c1_tokens)
-        c2_matches = any(tok in txt_lower[:35] for tok in c2_tokens)
-
-        if c1_matches and not c2_matches:
-            speaker1_active = True
-        elif c2_matches and not c1_matches:
-            speaker1_active = False
+        if scene_speaker:
+            s_low = scene_speaker.lower().strip()
+            if any(tok in s_low for tok in c1_tokens):
+                speaker1_active = True
+            elif any(tok in s_low for tok in c2_tokens):
+                speaker1_active = False
+            else:
+                speaker1_active = (scene_index % 2 == 0)
         else:
-            # When no explicit prefix is given, alternate speaking role stably per sentence/scene
-            text_seed = sum(ord(c) for c in (scene_text[:16] or "a"))
-            cycle = 2.8
-            speaker1_active = ((text_seed + int(t / cycle)) % 2 == 0)
+            c1_matches = any(tok in txt_lower[:35] for tok in c1_tokens)
+            c2_matches = any(tok in txt_lower[:35] for tok in c2_tokens)
+
+            if c1_matches and not c2_matches:
+                speaker1_active = True
+            elif c2_matches and not c1_matches:
+                speaker1_active = False
+            else:
+                # Semantic dialogue detection
+                if any(w in txt_lower for w in ["lab report", "numbers with you", "take a deep breath", "medication", "light walking", "nutrition guidelines"]):
+                    speaker1_active = True
+                elif any(w in txt_lower for w in ["please be honest", "surgery", "relief to hear", "lifestyle adjustments"]):
+                    speaker1_active = False
+                elif scene_index >= 0:
+                    speaker1_active = (scene_index % 2 == 0)
+                else:
+                    text_seed = sum(ord(c) for c in (scene_text[:16] or "a"))
+                    cycle = 2.8
+                    speaker1_active = ((text_seed + int(t / cycle)) % 2 == 0)
 
         # STRICT LIP SYNC ENFORCEMENT:
         # The active speaker receives the full lip-sync audio energy.
@@ -1162,37 +1184,37 @@ class FootageManager:
         mask2 = np.any(buf2 > 0, axis=-1)
         canvas[mask2] = buf2[mask2]
 
-        # 3. Drama Scene Header Badge
-        bw = min(int(width * 0.58), 540)
+        # 3. Drama Scene Header Badge (clean, no character name mentioned)
+        bw = min(int(width * 0.44), 420)
         bx1 = (width - bw) // 2
         bx2 = bx1 + bw
         by = int(height * 0.08)
         cv2.rectangle(canvas, (bx1, by - 16), (bx2, by + 18), (15, 23, 42), -1)
         cv2.rectangle(canvas, (bx1, by - 16), (bx2, by + 18), (59, 130, 246), 1, cv2.LINE_AA)
-        banner_txt = f"DRAMA DIALOGUE // {tag1.upper()} & {tag2.upper()}"
-        cv2.putText(canvas, banner_txt, (bx1 + 16, by + 6),
+        banner_txt = "DRAMATIC CONVERSATION"
+        cv2.putText(canvas, banner_txt, (bx1 + 24, by + 6),
                     cv2.FONT_HERSHEY_DUPLEX, 0.44, (240, 240, 255), 1, cv2.LINE_AA)
 
-        # 4. Turn-taking speaker badges above each character
+        # 4. Turn-taking speaker badges above active character (no character name mentioned)
         spk_y = int(height * 0.22)
         target_cx2 = int(width * 0.80)
         if speaker1_active:
             # Char 1 speaking (Emerald glow)
-            cv2.rectangle(canvas, (target_cx1 - 70, spk_y - 12), (target_cx1 + 70, spk_y + 12), (5, 150, 105), -1)
-            cv2.putText(canvas, f"{tag1.upper()}: SPEAKING", (target_cx1 - 58, spk_y + 5),
+            cv2.rectangle(canvas, (target_cx1 - 55, spk_y - 12), (target_cx1 + 55, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, "SPEAKING", (target_cx1 - 38, spk_y + 5),
                         cv2.FONT_HERSHEY_DUPLEX, 0.36, (255, 255, 255), 1, cv2.LINE_AA)
             # Char 2 listening (Muted slate)
-            cv2.rectangle(canvas, (target_cx2 - 70, spk_y - 12), (target_cx2 + 70, spk_y + 12), (30, 41, 59), -1)
-            cv2.putText(canvas, f"{tag2.upper()}: LISTENING", (target_cx2 - 58, spk_y + 5),
+            cv2.rectangle(canvas, (target_cx2 - 55, spk_y - 12), (target_cx2 + 55, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, "LISTENING", (target_cx2 - 38, spk_y + 5),
                         cv2.FONT_HERSHEY_DUPLEX, 0.34, (148, 163, 184), 1, cv2.LINE_AA)
         else:
             # Char 1 listening (Muted slate)
-            cv2.rectangle(canvas, (target_cx1 - 70, spk_y - 12), (target_cx1 + 70, spk_y + 12), (30, 41, 59), -1)
-            cv2.putText(canvas, f"{tag1.upper()}: LISTENING", (target_cx1 - 58, spk_y + 5),
+            cv2.rectangle(canvas, (target_cx1 - 55, spk_y - 12), (target_cx1 + 55, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, "LISTENING", (target_cx1 - 38, spk_y + 5),
                         cv2.FONT_HERSHEY_DUPLEX, 0.34, (148, 163, 184), 1, cv2.LINE_AA)
             # Char 2 speaking (Emerald glow)
-            cv2.rectangle(canvas, (target_cx2 - 70, spk_y - 12), (target_cx2 + 70, spk_y + 12), (5, 150, 105), -1)
-            cv2.putText(canvas, f"{tag2.upper()}: SPEAKING", (target_cx2 - 58, spk_y + 5),
+            cv2.rectangle(canvas, (target_cx2 - 55, spk_y - 12), (target_cx2 + 55, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, "SPEAKING", (target_cx2 - 38, spk_y + 5),
                         cv2.FONT_HERSHEY_DUPLEX, 0.36, (255, 255, 255), 1, cv2.LINE_AA)
 
     def _draw_animated_character(
@@ -1205,7 +1227,9 @@ class FootageManager:
         theme: str,
         lip_sync_energy: float,
         scene_text: str = "",
-        character_type: str = "human"
+        character_type: str = "human",
+        scene_speaker: Optional[str] = None,
+        scene_index: int = 0
     ):
         """
         Routes to character renderers:
@@ -1214,7 +1238,7 @@ class FootageManager:
         """
         ct = (character_type or "human").lower().strip()
 
-        # Parse for multiple characters (e.g. "human, robot", "lion & cat", "drama", "duo")
+        # Parse for multiple characters (e.g. "human, robot", "lion & cat", "drama", "duo", "doctor, patient")
         raw_parts = [p.strip() for p in re.split(r'[,+&]| and | vs | with ', ct) if p.strip()]
         is_drama = any(w in ct for w in ["drama", "discussion", "dialogue", "two character", "two people", "duo", "conversation"])
 
@@ -1231,7 +1255,9 @@ class FootageManager:
                 lip_sync_energy=lip_sync_energy,
                 scene_text=scene_text,
                 char1_name=c1,
-                char2_name=c2
+                char2_name=c2,
+                scene_speaker=scene_speaker,
+                scene_index=scene_index
             )
             return
 
@@ -1325,7 +1351,6 @@ class FootageManager:
         self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(90, 60, 30))
         self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
         self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=(200, 150, 50))
-        self._draw_badge(canvas, cx, cy, "DR. ADDISON // PHYSICIAN", border_color=(60, 180, 120), text_color=(220, 255, 230))
 
     def _char_patient(self, canvas, frame_idx, t, width, height, lip_sync_energy):
         """Patient character — light medical gown, patient ID wristband, pulse oximeter clip."""
@@ -1375,7 +1400,6 @@ class FootageManager:
         self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 50, 40))
         self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
         self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=(240, 200, 120))
-        self._draw_badge(canvas, cx, cy, "PATIENT // IN RECOVERY", border_color=(220, 180, 80), text_color=(240, 240, 255))
 
     def _char_king(self, canvas, frame_idx, t, width, height, lip_sync_energy):
         """King character — royal velvet robe with ermine fur trim, golden crown with jewels."""
@@ -1430,7 +1454,6 @@ class FootageManager:
         self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 60, 40))
         self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
         self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=gold)
-        self._draw_badge(canvas, cx, cy, "HIS MAJESTY // THE SOVEREIGN", border_color=gold, text_color=(255, 240, 200))
 
     def _char_advisor(self, canvas, frame_idx, t, width, height, lip_sync_energy):
         """Royal advisor / scholar character — scholarly robe, spectacles, rolled parchment scroll."""
@@ -1478,7 +1501,6 @@ class FootageManager:
         self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 60, 40))
         self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
         self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=tunic_trim)
-        self._draw_badge(canvas, cx, cy, "CHIEF ADVISOR // REALM COUNCIL", border_color=tunic_trim, text_color=(240, 240, 255))
 
     def _char_lion(self, canvas, frame_idx, t, width, height, lip_sync_energy):
         """Lion character — golden mane, amber eyes, roaring mouth with audio-sync."""
@@ -2516,7 +2538,8 @@ class FootageManager:
         audio_path: Optional[Path] = None,
         start_time: float = 0.0,
         scene_text: str = "",
-        character_type: str = "human"
+        character_type: str = "human",
+        scene_speaker: Optional[str] = None
     ) -> FootageClip:
         """
         Dual-source selector implementing the Advanced Level Requirement:
@@ -2535,8 +2558,8 @@ class FootageManager:
                 return clip
 
         # Fallback / Dual source: Generative Kinetic Motion Engine with Lip Sync
-        # Unique cache key includes character_type so different characters render separately
-        unique_seed = f"{scene_index}_{search_query}_{scene_text}_{character_type}"
+        # Unique cache key includes character_type and speaker so different turns render separately
+        unique_seed = f"{scene_index}_{search_query}_{scene_text}_{character_type}_{scene_speaker}"
         gen_path = self.cache_dir / f"scene_{scene_index}_{hashlib.md5(unique_seed.encode()).hexdigest()[:8]}.mp4"
         clip = self.generate_procedural_broll(
             query=search_query,
@@ -2546,7 +2569,9 @@ class FootageManager:
             audio_path=audio_path,
             start_time=start_time,
             scene_text=scene_text,
-            character_type=character_type
+            character_type=character_type,
+            scene_speaker=scene_speaker,
+            scene_index=scene_index
         )
         self.used_clip_ids.add(clip.clip_id)
         return clip

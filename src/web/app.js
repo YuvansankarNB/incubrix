@@ -176,17 +176,25 @@ function initPresets() {
     selectTab('tab-script');
     const scriptEl = document.getElementById('script-text');
     scriptEl.value = 
-      "Alex: We need to make a decision on the new launch right now before the deadline passes.\n" +
-      "Morgan: I understand the urgency, but rushing without full testing will risk everything we built.\n" +
-      "Alex: Look at the competitors, they are moving twice as fast and capturing market share.\n" +
-      "Morgan: Quality and customer trust is why our users stay loyal. Let's do a phased rollout instead.\n" +
-      "Alex: That is actually a brilliant compromise. Let's execute the phased rollout today.";
+      "Doctor: The latest lab reports just came in, and I wanted to discuss the numbers with you directly.\n" +
+      "Patient: Please be honest with me, Doctor. Does this mean I need immediate surgery?\n" +
+      "Doctor: Take a deep breath. While the inflammation is elevated, we caught this early enough that targeted medication can fully reverse it.\n" +
+      "Patient: That is such a relief to hear. What lifestyle adjustments must I begin making today?\n" +
+      "Doctor: Start with thirty minutes of light walking daily and follow the nutrition guidelines we prepared. You are going to recover completely.";
     scriptEl.dispatchEvent(new Event('input'));
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
 
-    // Auto-select Human & Robot Discussion Duo
-    const duoBtn = document.querySelector('.char-duo-btn[data-duo="human,robot"]');
-    if (duoBtn) duoBtn.click();
+    // Auto-select Doctor & Patient Discussion Duo
+    const duoBtn = document.querySelector('.char-duo-btn[data-duo="doctor,patient"]');
+    if (duoBtn) {
+      duoBtn.click();
+    } else {
+      const charInput = document.getElementById('character-type-input');
+      if (charInput) {
+        charInput.value = "Doctor, Patient";
+        charInput.dispatchEvent(new Event('input'));
+      }
+    }
   });
 
   document.getElementById('preset-finance')?.addEventListener('click', () => {

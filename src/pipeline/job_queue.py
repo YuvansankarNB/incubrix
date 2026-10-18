@@ -102,6 +102,7 @@ class JobManager:
 
         # Step 1: Narration Ingestion (TTS or Audio Inspection)
         audio_file: Path = None
+        dialogue_turns = None
         if req.get("script"):
             audio_file = job_dir / "narration.mp3"
             await audio_engine.synthesize_speech(
@@ -109,6 +110,14 @@ class JobManager:
                 voice_pref=req.get("voice"),
                 output_path=audio_file
             )
+            dialogue_turns = getattr(audio_engine, 'last_dialogue_turns', None)
+            if dialogue_turns and len(dialogue_turns) >= 2:
+                current_ct = (req.get("character_type") or "human").lower()
+                if current_ct in ["human", "default", ""]:
+                    spk1 = dialogue_turns[0]["speaker"].lower()
+                    spk2 = dialogue_turns[1]["speaker"].lower()
+                    req["character_type"] = f"{spk1}, {spk2}"
+                    logger.info(f"Auto-configured character_type for dialogue: {req['character_type']}")
         elif req.get("audio_url"):
             audio_file = job_dir / "input_audio.mp3"
             logger.info(f"Downloading voiceover audio from {req['audio_url']}")
@@ -160,7 +169,8 @@ class JobManager:
             total_audio_duration=duration,
             explicit_scenes=req.get("scenes"),
             avoid_list=req.get("avoid"),
-            style=req.get("style", "bright, modern, real-world footage")
+            style=req.get("style", "bright, modern, real-world footage"),
+            dialogue_turns=dialogue_turns
         )
         timings["scene_segmentation"] = round(time.time() - t2, 2)
         state.progress = 50
@@ -180,7 +190,8 @@ class JobManager:
                 audio_path=audio_file,
                 start_time=scene["start_time"],
                 scene_text=scene["narration"],
-                character_type=req.get("character_type", "human")
+                character_type=req.get("character_type", "human"),
+                scene_speaker=scene.get("speaker")
             )
             raw_clip_paths.append(clip.local_path)
             
