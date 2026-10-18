@@ -72,7 +72,8 @@ body {
 }
 
 .header-container {
-  max-width: 1440px;
+  max-width: 98%;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -175,9 +176,10 @@ body {
 
 /* Layout Flow */
 .main-container {
-  max-width: 1440px;
-  margin: 28px auto;
-  padding: 0 24px 60px 24px;
+  max-width: 98%;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 16px 60px 16px;
 }
 
 .flow-layout {
@@ -294,11 +296,11 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
-  padding: 26px 28px;
+  padding: 26px 30px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .full-width-card {
@@ -310,8 +312,7 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .card-header-row.justify-between {
@@ -319,16 +320,24 @@ body {
 }
 
 .step-badge {
-  display: flex;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: 12px;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .step-badge h2 {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .card-title-bar {
@@ -394,7 +403,7 @@ body {
 .form-vertical-flow {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
   width: 100%;
 }
 
@@ -405,7 +414,7 @@ body {
 .full-width-pills {
   width: 100%;
   display: flex;
-  gap: 12px;
+  gap: 14px;
 }
 
 .full-width-pills .pill-check {
@@ -415,24 +424,31 @@ body {
 .full-width-pills .pill-label {
   width: 100%;
   text-align: center;
-  padding: 10px 16px;
+  padding: 12px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .character-box-wrapper {
   background: var(--bg-muted);
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 18px 20px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .submit-row {
-  margin-top: 4px;
+  margin-top: 14px;
 }
 
 .full-width-btn {
   width: 100%;
-  padding: 14px 28px;
-  font-size: 1rem;
+  padding: 16px 28px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 8px;
 }
 
 /* Presets Bar */
@@ -534,13 +550,14 @@ body {
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 .field-group label {
-  font-size: 0.83rem;
-  font-weight: 600;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--text-main);
+  margin-bottom: 2px;
 }
 
 .field-hint {
@@ -1278,16 +1295,18 @@ textarea:focus, input:focus, select:focus {
 
 /* ── Character Box ─────────────────────────────────────────────────── */
 .character-box-section {
-  margin-top: 22px;
-  padding: 18px 20px 16px;
+  margin-top: 24px;
+  padding: 22px 24px;
   border: 1.5px solid var(--border-light);
   border-radius: 12px;
   background: var(--bg-muted);
 }
 
 .character-box-label {
-  display: block;
-  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-body);
   text-transform: uppercase;
@@ -1298,21 +1317,22 @@ textarea:focus, input:focus, select:focus {
 .char-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-top: 4px;
+  margin-bottom: 6px;
 }
 
 .char-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 8px 16px;
   border: 1.5px solid var(--border-light);
   border-radius: 999px;
   background: #ffffff;
   color: var(--text-body);
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.18s, background 0.18s, color 0.18s, box-shadow 0.18s;
   font-family: inherit;
@@ -1334,18 +1354,19 @@ textarea:focus, input:focus, select:focus {
 .char-custom-row {
   display: flex;
   gap: 10px;
+  margin-top: 4px;
 }
 
 .char-custom-row input {
   flex: 1;
-  padding: 8px 14px;
+  padding: 11px 16px;
   border: 1.5px solid var(--border-light);
   border-radius: 8px;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-family: inherit;
   background: #ffffff;
   color: var(--text-main);
-  transition: border-color 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .char-custom-row input:focus {
