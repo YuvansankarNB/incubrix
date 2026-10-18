@@ -225,6 +225,35 @@ def test_human_theme_fallback_resolution(theme_input, expected_human):
     assert np.any(canvas > 0)
 
 
+@pytest.mark.parametrize("multi_char_input", [
+    "human, robot",
+    "lion & cat",
+    "astronaut, alien",
+    "doctor, patient",
+    "two characters discussion",
+    "drama dialogue between king and advisor"
+])
+def test_multi_character_drama_dialogue_rendering(multi_char_input):
+    """Verifies that multi-character inputs activate drama dialogue rendering across both sides of the canvas."""
+    canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+    footage_manager._draw_animated_character(
+        canvas=canvas,
+        frame_idx=20,
+        t=1.5,
+        width=1280,
+        height=720,
+        theme="finance",
+        lip_sync_energy=0.45,
+        scene_text="We need to make a decision right now before the deadline passes.",
+        character_type=multi_char_input
+    )
+    # Check that pixels are populated on both the left (Char 1) and right (Char 2) halves
+    left_half = canvas[:, :640, :]
+    right_half = canvas[:, 640:, :]
+    assert np.any(left_half > 0), f"Left character missing for input: {multi_char_input}"
+    assert np.any(right_half > 0), f"Right character missing for input: {multi_char_input}"
+
+
 # ==============================================================================
 # CATEGORY 4: CAPTIONS & SUBTITLES ENGINE (SRT / VTT) (Tests 51 - 65)
 # ==============================================================================

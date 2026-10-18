@@ -314,7 +314,8 @@ class JobManager:
             preferred_source=preferred_source,
             audio_path=state.audio_path,
             start_time=scene["start_time"],
-            scene_text=scene["narration"]
+            scene_text=scene["narration"],
+            character_type=state.request_data.get("character_type", "human")
         )
         scene["clip_used"] = new_clip.to_dict()
         scene["search_query"] = query

@@ -3,6 +3,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import subprocess
 import urllib.parse
 import urllib.request
@@ -918,6 +919,142 @@ class FootageManager:
 
     # ───────────────── THEME → CHARACTER DISPATCHER ─────────────────────────
 
+    # ───────────────── THEME → CHARACTER DISPATCHER ─────────────────────────
+
+    def _get_char_renderer(self, name: str, theme: str):
+        """Resolves a character name or theme to (render_fn, display_name)."""
+        n = (name or "").lower().strip()
+        custom_map = {
+            "lion":       (self._char_lion, "Lion"),
+            "robot":      (self._char_robot, "Robot"),
+            "cat":        (self._char_cat, "Cat"),
+            "dog":        (self._char_dog, "Dog"),
+            "bird":       (self._char_bird, "Bird"),
+            "astronaut":  (self._char_astronaut, "Astronaut"),
+            "wizard":     (self._char_wizard, "Wizard"),
+            "alien":      (self._char_alien, "Alien"),
+        }
+        for key, (fn, tag) in custom_map.items():
+            if key in n:
+                return fn, tag
+
+        human_map = {
+            "analyst":    (self._char_analyst, "Analyst"),
+            "engineer":   (self._char_engineer, "Engineer"),
+            "banker":     (self._char_banker, "Banker"),
+            "doctor":     (self._char_analyst, "Doctor"),
+            "patient":    (self._char_tired_worker, "Patient"),
+            "coach":      (self._char_coach, "Coach"),
+            "hacker":     (self._char_hacker, "Hacker"),
+            "executive":  (self._char_executive, "Executive"),
+            "influencer": (self._char_influencer, "Influencer"),
+            "diplomat":   (self._char_diplomat, "Diplomat"),
+            "artist":     (self._char_artist, "Artist"),
+            "worker":     (self._char_tired_worker, "Worker"),
+            "speedster":  (self._char_speedster, "Speedster"),
+        }
+        for key, (fn, tag) in human_map.items():
+            if key in n:
+                return fn, tag
+
+        theme_map = {
+            "warning":  (self._char_analyst, "Analyst"),
+            "waste":    (self._char_tired_worker, "Worker"),
+            "calendar": (self._char_coach, "Coach"),
+            "tweak":    (self._char_hacker, "Hacker"),
+            "instant":  (self._char_speedster, "Speedster"),
+            "email":    (self._char_executive, "Executive"),
+            "social":   (self._char_influencer, "Influencer"),
+            "finance":  (self._char_banker, "Banker"),
+            "tech":     (self._char_engineer, "Engineer"),
+            "trust":    (self._char_diplomat, "Diplomat"),
+            "creative": (self._char_artist, "Artist"),
+        }
+        return theme_map.get(theme, (self._char_analyst, "Human"))
+
+    def _render_drama_dialogue(
+        self,
+        canvas: np.ndarray,
+        frame_idx: int,
+        t: float,
+        width: int,
+        height: int,
+        theme: str,
+        lip_sync_energy: float,
+        scene_text: str,
+        char1_name: str,
+        char2_name: str
+    ):
+        """
+        Renders a two-character dramatic discussion / dialogue scene.
+        Character 1 sits on the left (cx ≈ 0.28 * width).
+        Character 2 sits on the right (cx ≈ 0.80 * width).
+        Speakers dynamically alternate lip-sync, expressive eyes, and dialogue indicators.
+        """
+        fn1, tag1 = self._get_char_renderer(char1_name, theme)
+        fn2, tag2 = self._get_char_renderer(char2_name, theme)
+        if fn1 == fn2 and tag1.lower() == "human":
+            # Differentiate two humans in dialogue
+            fn2 = self._char_engineer
+            tag2 = "Engineer"
+
+        # Dialogue alternation: cycle speaking role every ~2.5s for natural conversation
+        cycle = 2.5
+        speaker1_active = (int(t / cycle) % 2 == 0)
+
+        # Lip-sync energy: active speaker speaks, listening character reacts softly
+        energy1 = lip_sync_energy if speaker1_active else max(0.0, lip_sync_energy * 0.12)
+        energy2 = lip_sync_energy if not speaker1_active else max(0.0, lip_sync_energy * 0.12)
+
+        # 1. Render Character 1 (Left side: cx ≈ 0.28 * width)
+        buf1 = np.zeros_like(canvas)
+        fn1(buf1, frame_idx, t, width, height, energy1)
+        target_cx1 = int(width * 0.28)
+        dx1 = target_cx1 - int(width * 0.80)
+        M1 = np.float32([[1, 0, dx1], [0, 1, 0]])
+        shifted1 = cv2.warpAffine(buf1, M1, (width, height))
+        mask1 = np.any(shifted1 > 0, axis=-1)
+        canvas[mask1] = shifted1[mask1]
+
+        # 2. Render Character 2 (Right side: cx ≈ 0.80 * width)
+        buf2 = np.zeros_like(canvas)
+        fn2(buf2, frame_idx, t + 0.4, width, height, energy2)
+        mask2 = np.any(buf2 > 0, axis=-1)
+        canvas[mask2] = buf2[mask2]
+
+        # 3. Drama Scene Header Badge
+        bw = min(int(width * 0.58), 520)
+        bx1 = (width - bw) // 2
+        bx2 = bx1 + bw
+        by = int(height * 0.08)
+        cv2.rectangle(canvas, (bx1, by - 16), (bx2, by + 18), (15, 23, 42), -1)
+        cv2.rectangle(canvas, (bx1, by - 16), (bx2, by + 18), (59, 130, 246), 1, cv2.LINE_AA)
+        banner_txt = f"DRAMA DIALOGUE // {tag1.upper()} & {tag2.upper()}"
+        cv2.putText(canvas, banner_txt, (bx1 + 16, by + 6),
+                    cv2.FONT_HERSHEY_DUPLEX, 0.44, (240, 240, 255), 1, cv2.LINE_AA)
+
+        # 4. Turn-taking speaker badges above each character
+        spk_y = int(height * 0.22)
+        target_cx2 = int(width * 0.80)
+        if speaker1_active:
+            # Char 1 speaking (Emerald)
+            cv2.rectangle(canvas, (target_cx1 - 65, spk_y - 12), (target_cx1 + 65, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, "SPEAKING", (target_cx1 - 42, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
+            # Char 2 listening (Slate)
+            cv2.rectangle(canvas, (target_cx2 - 65, spk_y - 12), (target_cx2 + 65, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, "LISTENING", (target_cx2 - 42, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (148, 163, 184), 1, cv2.LINE_AA)
+        else:
+            # Char 1 listening (Slate)
+            cv2.rectangle(canvas, (target_cx1 - 65, spk_y - 12), (target_cx1 + 65, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, "LISTENING", (target_cx1 - 42, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (148, 163, 184), 1, cv2.LINE_AA)
+            # Char 2 speaking (Emerald)
+            cv2.rectangle(canvas, (target_cx2 - 65, spk_y - 12), (target_cx2 + 65, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, "SPEAKING", (target_cx2 - 42, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
+
     def _draw_animated_character(
         self,
         canvas: np.ndarray,
@@ -931,43 +1068,36 @@ class FootageManager:
         character_type: str = "human"
     ):
         """
-        Routes to a character renderer.
-        Priority 1: character_type keyword (lion, robot, cat, dog, bird, astronaut, wizard, alien).
-        Priority 2: theme-based human professional (analyst, coach, hacker…).
+        Routes to character renderers:
+        - If 2+ characters or drama discussion requested: renders 2 characters in dialogue.
+        - Otherwise: routes to single character renderer.
         """
-        # ── Custom character type overrides ──────────────────────────────────
         ct = (character_type or "human").lower().strip()
-        custom_map = {
-            "lion":       self._char_lion,
-            "robot":      self._char_robot,
-            "cat":        self._char_cat,
-            "dog":        self._char_dog,
-            "bird":       self._char_bird,
-            "astronaut":  self._char_astronaut,
-            "wizard":     self._char_wizard,
-            "alien":      self._char_alien,
-        }
-        # Fuzzy match — if any key is a substring of the user's input
-        for key, fn in custom_map.items():
-            if key in ct:
-                fn(canvas, frame_idx, t, width, height, lip_sync_energy)
-                return
 
-        # ── Default: theme-based human professional ───────────────────────────
-        theme_map = {
-            "warning":  self._char_analyst,
-            "waste":    self._char_tired_worker,
-            "calendar": self._char_coach,
-            "tweak":    self._char_hacker,
-            "instant":  self._char_speedster,
-            "email":    self._char_executive,
-            "social":   self._char_influencer,
-            "finance":  self._char_banker,
-            "tech":     self._char_engineer,
-            "trust":    self._char_diplomat,
-            "creative": self._char_artist,
-        }
-        theme_map.get(theme, self._char_analyst)(canvas, frame_idx, t, width, height, lip_sync_energy)
+        # Parse for multiple characters (e.g. "human, robot", "lion & cat", "drama", "duo")
+        raw_parts = [p.strip() for p in re.split(r'[,+&]| and | vs | with ', ct) if p.strip()]
+        is_drama = any(w in ct for w in ["drama", "discussion", "dialogue", "two character", "two people", "duo", "conversation"])
+
+        if len(raw_parts) >= 2 or is_drama:
+            c1 = raw_parts[0] if len(raw_parts) >= 1 else "human"
+            c2 = raw_parts[1] if len(raw_parts) >= 2 else ("robot" if c1 != "robot" else "human")
+            self._render_drama_dialogue(
+                canvas=canvas,
+                frame_idx=frame_idx,
+                t=t,
+                width=width,
+                height=height,
+                theme=theme,
+                lip_sync_energy=lip_sync_energy,
+                scene_text=scene_text,
+                char1_name=c1,
+                char2_name=c2
+            )
+            return
+
+        # Single character rendering path
+        fn, _ = self._get_char_renderer(ct, theme)
+        fn(canvas, frame_idx, t, width, height, lip_sync_energy)
 
     # ────────────── CUSTOM CHARACTER TYPE RENDERERS ──────────────────────────
 

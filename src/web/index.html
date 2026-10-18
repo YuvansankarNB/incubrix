@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scriptify — Video Engine</title>
-  <link rel="stylesheet" href="/static/style.css?v=2.5">
+  <link rel="stylesheet" href="/static/style.css?v=3.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -64,6 +64,7 @@
           </div>
           <div class="presets-bar">
             <span class="preset-label">Presets:</span>
+            <button type="button" class="preset-btn" id="preset-drama">🎭 Drama Dialogue</button>
             <button type="button" class="preset-btn" id="preset-finance">Finance</button>
             <button type="button" class="preset-btn" id="preset-cloud">Cloud Tech</button>
             <button type="button" class="preset-btn" id="preset-hindi">हिंदी Hindi</button>
@@ -82,8 +83,15 @@
         <div class="tab-pane active" id="tab-script">
           <div class="form-vertical-flow">
             <div class="field-group full-width-group">
-              <label for="script-text">Script Text</label>
-              <textarea id="script-text" rows="4" placeholder="Enter your script here... Or pick a preset above.">Stop making this one big mistake with your daily routine. Most people do this entirely wrong, which actually wastes your valuable time and completely ruins your results in less than a week. Instead, try this simple tweak, make your very first move quick and then immediately lock in your focus. It takes less than 5 seconds to do and fixes the problem instantly. If you want the full breakdown sent straight to your inbox, drop a yes in the comments right now.</textarea>
+              <div class="script-header-row">
+                <label for="script-text">Script Text</label>
+                <div class="script-stats" id="script-stats">
+                  <span id="stat-words">68 words</span> &bull; 
+                  <span id="stat-chars">418 chars</span> &bull; 
+                  <span id="stat-time">~25s speech</span>
+                </div>
+              </div>
+              <textarea id="script-text" rows="10" placeholder="Enter your script here... Supports massive text, long voiceovers, and two-character drama discussions (Alex: ... Morgan: ...)">Stop making this one big mistake with your daily routine. Most people do this entirely wrong, which actually wastes your valuable time and completely ruins your results in less than a week. Instead, try this simple tweak, make your very first move quick and then immediately lock in your focus. It takes less than 5 seconds to do and fixes the problem instantly. If you want the full breakdown sent straight to your inbox, drop a yes in the comments right now.</textarea>
             </div>
             <div class="field-group full-width-group">
               <label for="tts-voice">Neural TTS Voice</label>
@@ -195,12 +203,25 @@
             </div>
           </div>
 
-          <!-- Row 3: Character Selection Box -->
+          <!-- Row 3: Character Selection Box (Multi-Character & Drama Support) -->
           <div class="field-group full-width-group character-box-wrapper">
-            <label class="character-box-label">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-              Character in Video
-            </label>
+            <div class="char-header-row">
+              <label class="character-box-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                Characters in Video (Select One or Multiple for Drama & Dialogue)
+              </label>
+              <span id="char-selection-summary" class="char-summary-badge">1 Character: Human</span>
+            </div>
+
+            <!-- Quick Discussion Duos -->
+            <div class="char-duo-presets">
+              <span class="duo-label">Discussion Duos:</span>
+              <button type="button" class="char-duo-btn" data-duo="human,robot">🎭 Human & Robot</button>
+              <button type="button" class="char-duo-btn" data-duo="human,engineer">👥 Two People (Duo)</button>
+              <button type="button" class="char-duo-btn" data-duo="lion,cat">🦁 Lion & Cat</button>
+              <button type="button" class="char-duo-btn" data-duo="astronaut,alien">🚀 Astronaut & Alien</button>
+            </div>
+
             <div class="char-chips" id="char-chips">
               <button type="button" class="char-chip active" data-char="human">&#x1F9D1; Human</button>
               <button type="button" class="char-chip" data-char="lion">&#x1F981; Lion</button>
@@ -213,7 +234,7 @@
               <button type="button" class="char-chip" data-char="alien">&#x1F47D; Alien</button>
             </div>
             <div class="char-custom-row">
-              <input type="text" id="character-type-input" placeholder="Or type any custom character: dragon, dinosaur, knight, fox…" maxlength="40">
+              <input type="text" id="character-type-input" placeholder="Or type multiple custom characters: Doctor, Patient or King, Advisor or Dragon, Knight…" maxlength="80">
             </div>
           </div>
 
@@ -380,6 +401,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=3.0"></script>
 </body>
 </html>

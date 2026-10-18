@@ -92,6 +92,7 @@ async def create_broll_job_upload(
     style: str = Form("bright, modern, real-world footage"),
     avoid: str = Form(""),
     burn_in_captions: bool = Form(True),
+    character_type: str = Form("human"),
     idempotency_key: str = Header(..., alias="Idempotency-Key")
 ):
     """
@@ -111,7 +112,8 @@ async def create_broll_job_upload(
         "aspect_ratios": ratios,
         "style": style,
         "avoid": avoid_list,
-        "captions": {"burn_in": burn_in_captions, "srt": True}
+        "captions": {"burn_in": burn_in_captions, "srt": True},
+        "character_type": character_type
     }
 
     job_state = job_manager.create_job(job_id, request_data)

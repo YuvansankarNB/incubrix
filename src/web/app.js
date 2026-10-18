@@ -18,32 +18,131 @@ document.addEventListener('DOMContentLoaded', () => {
   initInspectTabs();
   initFileUploadUI();
   initCharacterBox();
+  initScriptStats();
   initCaptionToggle();
   initVideoTimeUpdate();
 });
 
-// Character Box — chip selection + custom input
+// Live Script Stats (Word Count, Character Count, Estimated Speech Duration)
+function initScriptStats() {
+  const textarea = document.getElementById('script-text');
+  const wordEl = document.getElementById('stat-words');
+  const charEl = document.getElementById('stat-chars');
+  const timeEl = document.getElementById('stat-time');
+  if (!textarea || !wordEl) return;
+
+  function update() {
+    const text = textarea.value.trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = text.length;
+    // Avg narration speed: ~150 words per minute (2.5 words/sec)
+    const estSec = Math.round(words / 2.5);
+    const estTimeStr = estSec < 60 ? `~${estSec}s speech` : `~${Math.floor(estSec/60)}m ${estSec%60}s speech`;
+
+    wordEl.textContent = `${words} words`;
+    charEl.textContent = `${chars} chars`;
+    timeEl.textContent = estTimeStr;
+  }
+
+  textarea.addEventListener('input', update);
+  update();
+}
+
+// Character Box — Multi-Selection, Drama Duos, Custom Inputs & Live Summary
 function initCharacterBox() {
   const chips = document.querySelectorAll('#char-chips .char-chip');
   const customInput = document.getElementById('character-type-input');
-  if (!chips.length || !customInput) return;
+  const summaryBadge = document.getElementById('char-selection-summary');
+  const duoBtns = document.querySelectorAll('.char-duo-btn');
 
+  function updateSummary() {
+    if (!summaryBadge) return;
+    const custom = (customInput?.value || '').trim();
+    if (custom) {
+      const parts = custom.split(/[,+&]| and /i).map(s => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        summaryBadge.textContent = `🎭 Drama Mode: ${parts.slice(0, 2).join(' & ')} (${parts.length} Characters)`;
+        summaryBadge.classList.add('drama-active');
+      } else {
+        summaryBadge.textContent = `Custom: ${custom}`;
+        summaryBadge.classList.remove('drama-active');
+      }
+      return;
+    }
+
+    const activeChips = Array.from(document.querySelectorAll('#char-chips .char-chip.active'));
+    if (activeChips.length === 0) {
+      summaryBadge.textContent = "1 Character: Human";
+      summaryBadge.classList.remove('drama-active');
+    } else if (activeChips.length === 1) {
+      const name = activeChips[0].textContent.trim();
+      summaryBadge.textContent = `1 Character: ${name}`;
+      summaryBadge.classList.remove('drama-active');
+    } else {
+      const names = activeChips.map(c => c.textContent.trim().split(' ').pop()).join(' & ');
+      summaryBadge.textContent = `🎭 Drama Mode: ${names} (${activeChips.length} Characters)`;
+      summaryBadge.classList.add('drama-active');
+    }
+  }
+
+  // Toggle multi-selection on chips
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
-      chips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      customInput.value = '';
+      // Clear custom text when clicking chips
+      if (customInput) customInput.value = '';
+      duoBtns.forEach(b => b.classList.remove('active'));
+
+      chip.classList.toggle('active');
+
+      // Ensure at least one chip is active if custom is empty
+      const activeCount = document.querySelectorAll('#char-chips .char-chip.active').length;
+      if (activeCount === 0) {
+        chip.classList.add('active');
+      }
+
+      updateSummary();
     });
   });
 
-  customInput.addEventListener('input', () => {
-    if (customInput.value.trim()) {
-      chips.forEach(c => c.classList.remove('active'));
-    } else {
-      const humanChip = document.querySelector('#char-chips .char-chip[data-char="human"]');
-      if (humanChip) humanChip.classList.add('active');
-    }
+  // Discussion Duo Quick Presets
+  duoBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const duoStr = btn.getAttribute('data-duo'); // e.g. "human,robot"
+      const pair = duoStr.split(',');
+
+      duoBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (customInput) customInput.value = '';
+
+      // Activate chips matching pair
+      chips.forEach(c => {
+        if (pair.includes(c.dataset.char)) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+
+      updateSummary();
+    });
   });
+
+  // Custom text input
+  if (customInput) {
+    customInput.addEventListener('input', () => {
+      if (customInput.value.trim()) {
+        chips.forEach(c => c.classList.remove('active'));
+        duoBtns.forEach(b => b.classList.remove('active'));
+      } else {
+        const humanChip = document.querySelector('#char-chips .char-chip[data-char="human"]');
+        if (humanChip) humanChip.classList.add('active');
+      }
+      updateSummary();
+    });
+  }
+
+  updateSummary();
 }
 
 // 1. Tab Navigation
@@ -72,31 +171,57 @@ function initPresets() {
     if (pane) pane.classList.add('active');
   };
 
+  // Drama Dialogue Preset
+  document.getElementById('preset-drama')?.addEventListener('click', () => {
+    selectTab('tab-script');
+    const scriptEl = document.getElementById('script-text');
+    scriptEl.value = 
+      "Alex: We need to make a decision on the new launch right now before the deadline passes.\n" +
+      "Morgan: I understand the urgency, but rushing without full testing will risk everything we built.\n" +
+      "Alex: Look at the competitors, they are moving twice as fast and capturing market share.\n" +
+      "Morgan: Quality and customer trust is why our users stay loyal. Let's do a phased rollout instead.\n" +
+      "Alex: That is actually a brilliant compromise. Let's execute the phased rollout today.";
+    scriptEl.dispatchEvent(new Event('input'));
+    document.getElementById('tts-voice').value = "en-US-AriaNeural";
+
+    // Auto-select Human & Robot Discussion Duo
+    const duoBtn = document.querySelector('.char-duo-btn[data-duo="human,robot"]');
+    if (duoBtn) duoBtn.click();
+  });
+
   document.getElementById('preset-finance')?.addEventListener('click', () => {
     selectTab('tab-script');
-    document.getElementById('script-text').value = 
+    const scriptEl = document.getElementById('script-text');
+    scriptEl.value = 
       "In 2025, our corporate sales grew 40% across all markets. When you deposit capital into a high yield savings bank, compound interest works quietly in your favor. Every smart investment begins with patience.";
+    scriptEl.dispatchEvent(new Event('input'));
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
   });
 
   document.getElementById('preset-cloud')?.addEventListener('click', () => {
     selectTab('tab-script');
-    document.getElementById('script-text').value = 
+    const scriptEl = document.getElementById('script-text');
+    scriptEl.value = 
       "Modern cloud computing infrastructure powers millions of servers globally. Our distributed clusters guarantee zero downtime, automated failovers, and resilient data backups.";
+    scriptEl.dispatchEvent(new Event('input'));
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
   });
 
   document.getElementById('preset-hindi')?.addEventListener('click', () => {
     selectTab('tab-script');
-    document.getElementById('script-text').value = 
+    const scriptEl = document.getElementById('script-text');
+    scriptEl.value = 
       "तकनीक और नवाचार की दुनिया में आपका स्वागत है। हमारा उद्देश्य रचनाकारों को कृत्रिम बुद्धिमत्ता के साथ शक्तिशाली वीडियो बनाने में सहायता करना है।";
+    scriptEl.dispatchEvent(new Event('input'));
     document.getElementById('tts-voice').value = "hi-IN-female";
   });
 
   document.getElementById('preset-tamil')?.addEventListener('click', () => {
     selectTab('tab-script');
-    document.getElementById('script-text').value = 
+    const scriptEl = document.getElementById('script-text');
+    scriptEl.value = 
       "செயற்கை நுண்ணறிவு மூலம் காணொளிகளை உருவாக்குவது இப்போது மிக எளிது. உங்கள் படைப்பாற்றலை அடுத்த கட்டத்திற்கு கொண்டு செல்லுங்கள்.";
+    scriptEl.dispatchEvent(new Event('input'));
     document.getElementById('tts-voice').value = "ta-IN-female";
   });
 }
@@ -132,10 +257,11 @@ function initFormSubmit() {
     const styleEl = document.getElementById('video-style');
     const style = styleEl ? styleEl.value.trim() : "cinematic-real";
 
-    // Read character type — custom text input overrides chip selection
+    // Read character type — multi-select chips or custom text input
     const charCustom = (document.getElementById('character-type-input')?.value || '').trim();
-    const activeChip = document.querySelector('#char-chips .char-chip.active');
-    const characterType = charCustom || (activeChip ? activeChip.dataset.char : 'human');
+    const activeChips = Array.from(document.querySelectorAll('#char-chips .char-chip.active'));
+    const selectedChars = activeChips.map(c => c.dataset.char);
+    const characterType = charCustom || (selectedChars.length > 0 ? selectedChars.join(', ') : 'human');
 
     // Generate unique idempotency key
     const idempotencyKey = "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
