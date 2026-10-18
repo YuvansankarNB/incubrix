@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IncuBrix — Script & Voiceover to B-Roll Video Engine</title>
+  <title>Scriptify — Video Engine</title>
   <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,15 +14,22 @@
   <header class="app-header">
     <div class="header-container">
       <div class="brand">
-        <div class="brand-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+        <div class="brand-logo">
+          <!-- Sleek modern Scriptify S play-icon logo -->
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="8" fill="url(#scriptifyGrad)"/>
+            <path d="M9 8.5C9 7.67157 9.89543 7.15356 10.6128 7.56918L20.127 13.0692C20.8444 13.4848 20.8444 14.5152 20.127 14.9308L10.6128 20.4308C9.89543 20.8464 9 20.3284 9 19.5V8.5Z" fill="white"/>
+            <defs>
+              <linearGradient id="scriptifyGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#2563EB"/>
+                <stop offset="1" stop-color="#7C3AED"/>
+              </linearGradient>
+            </defs>
           </svg>
         </div>
-        <div>
-          <div class="brand-title">IncuBrix</div>
-          <div class="brand-subtitle">Script & Voiceover to B-Roll Engine</div>
+        <div class="brand-text">
+          <span class="brand-name">Scriptify</span>
+          <span class="brand-badge">PRO</span>
         </div>
       </div>
       <div class="header-actions">
@@ -37,7 +44,7 @@
             <line x1="16" y1="13" x2="8" y2="13"></line>
             <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
-          API Spec (OpenAPI 3.1)
+          API Spec
         </a>
         <a href="/health" target="_blank" class="nav-link">Health Check</a>
       </div>
@@ -47,63 +54,17 @@
   <!-- Main Container -->
   <main class="main-container">
     <div class="flow-layout">
-      
-      <!-- Animated Character Mascot Companion (Brixy) -->
-      <section class="mascot-banner">
-        <div class="mascot-container">
-          <div class="mascot-avatar">
-            <svg class="mascot-svg" viewBox="0 0 120 120" width="84" height="84">
-              <!-- Antenna with pulsating light -->
-              <line x1="60" y1="26" x2="60" y2="10" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"/>
-              <circle cx="60" cy="8" r="7" fill="#3b82f6" class="mascot-antenna-glow"/>
-              
-              <!-- Body / Base -->
-              <rect x="34" y="82" width="52" height="28" rx="10" fill="#2563eb"/>
-              <rect x="42" y="90" width="36" height="12" rx="4" fill="#60a5fa" opacity="0.4"/>
 
-              <!-- Robot Head -->
-              <rect x="22" y="24" width="76" height="60" rx="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="3"/>
-              
-              <!-- Visor Screen -->
-              <rect x="30" y="34" width="60" height="38" rx="12" fill="#0f172a"/>
-              
-              <!-- Expressive Eyes with Blinking Animation -->
-              <g class="mascot-eyes">
-                <circle cx="46" cy="52" r="7" fill="#38bdf8"/>
-                <circle cx="44" cy="50" r="2.5" fill="#ffffff"/>
-                <circle cx="74" cy="52" r="7" fill="#38bdf8"/>
-                <circle cx="72" cy="50" r="2.5" fill="#ffffff"/>
-              </g>
-
-              <!-- Cute Smiling Mouth -->
-              <path d="M52 64 Q60 70 68 64" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-
-              <!-- Headphone ear muffs -->
-              <rect x="15" y="42" width="8" height="24" rx="4" fill="#3b82f6"/>
-              <rect x="97" y="42" width="8" height="24" rx="4" fill="#3b82f6"/>
-            </svg>
-          </div>
-          <div class="mascot-bubble">
-            <div class="mascot-header">
-              <span class="mascot-badge">AI Host</span>
-              <span class="mascot-name">Brixy</span>
-            </div>
-            <p id="mascot-message">👋 Hi! I'm Brixy, your AI video director! Select a script preset or upload voiceover audio below, and I'll generate your multi-aspect B-roll video scene-by-scene!</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- STEP 1: Full-Width Narration & Directives -->
+      <!-- STEP 1: Full-Width Narrative Card -->
       <section class="card full-width-card">
-        <div class="card-title-bar">
-          <div class="step-num">1</div>
-          <div class="flex-1">
-            <h2>Narration & Directives</h2>
-            <p class="card-caption">Input raw script text, upload an audio voiceover, or define structured IncuBrix scene pairs</p>
+        <div class="card-header-row">
+          <div class="step-badge">
+            <span class="step-num">1</span>
+            <h2>Narrative</h2>
           </div>
           <div class="presets-bar">
-            <span class="preset-label">Quick Presets:</span>
-            <button type="button" class="preset-btn" id="preset-finance">Finance Growth</button>
+            <span class="preset-label">Presets:</span>
+            <button type="button" class="preset-btn" id="preset-finance">Finance</button>
             <button type="button" class="preset-btn" id="preset-cloud">Cloud Tech</button>
             <button type="button" class="preset-btn" id="preset-hindi">हिंदी Hindi</button>
             <button type="button" class="preset-btn" id="preset-tamil">தமிழ் Tamil</button>
@@ -114,18 +75,18 @@
         <div class="segmented-control">
           <button class="seg-btn active" data-tab="tab-script">Text Script to Voiceover</button>
           <button class="seg-btn" data-tab="tab-audio">Upload Audio Voiceover</button>
-          <button class="seg-btn" data-tab="tab-scenes">IncuBrix Structured Scenes</button>
+          <button class="seg-btn" data-tab="tab-scenes">Structured Scenes</button>
         </div>
 
         <!-- Tab 1: Text Script -->
         <div class="tab-pane active" id="tab-script">
-          <div class="two-col-grid">
-            <div class="field-group flex-2">
-              <label for="script-text">Script Narration Text</label>
-              <textarea id="script-text" rows="4" placeholder="Enter your script here... Or click a Quick Preset above to auto-fill.">Stop making this one big mistake with your daily routine. Most people do this entirely wrong, which actually wastes your valuable time and completely ruins your results in less than a week. Instead, try this simple tweak, make your very first move quick and then immediately lock in your focus. It takes less than 5 seconds to do and fixes the problem instantly. If you want the full breakdown sent straight to your inbox, drop a yes in the comments right now.</textarea>
+          <div class="form-vertical-flow">
+            <div class="field-group full-width-group">
+              <label for="script-text">Script Text</label>
+              <textarea id="script-text" rows="4" placeholder="Enter your script here... Or pick a preset above.">Stop making this one big mistake with your daily routine. Most people do this entirely wrong, which actually wastes your valuable time and completely ruins your results in less than a week. Instead, try this simple tweak, make your very first move quick and then immediately lock in your focus. It takes less than 5 seconds to do and fixes the problem instantly. If you want the full breakdown sent straight to your inbox, drop a yes in the comments right now.</textarea>
             </div>
-            <div class="field-group flex-1">
-              <label for="tts-voice">Neural TTS Voice (Multi-lingual)</label>
+            <div class="field-group full-width-group">
+              <label for="tts-voice">Neural TTS Voice</label>
               <div class="select-wrapper">
                 <select id="tts-voice">
                   <option value="en-US-AriaNeural">English (US) — Aria (Neural)</option>
@@ -137,15 +98,14 @@
                   <option value="ta-IN-male">Tamil — Valluvar (Neural)</option>
                 </select>
               </div>
-              <p class="field-hint">Neural voices generate natural inflection with word-level forced alignment.</p>
             </div>
           </div>
         </div>
 
         <!-- Tab 2: Audio File / URL -->
         <div class="tab-pane" id="tab-audio">
-          <div class="two-col-grid">
-            <div class="field-group flex-1">
+          <div class="form-vertical-flow">
+            <div class="field-group full-width-group">
               <label for="audio-upload">Upload Voiceover File (.mp3, .wav, .m4a)</label>
               <div class="file-upload-box" id="dropzone">
                 <input type="file" id="audio-upload" accept="audio/mp3,audio/wav,audio/m4a,audio/*">
@@ -159,19 +119,19 @@
                 <span id="upload-filename">Drag & drop or browse voiceover audio (up to 10 min)</span>
               </div>
             </div>
-            <div class="field-group flex-1">
-              <label for="audio-url">Or Provide Audio Public URL</label>
+            <div class="field-group full-width-group">
+              <label for="audio-url">Audio Public URL</label>
               <input type="url" id="audio-url" placeholder="https://storage.example.com/voiceover.mp3">
-              <p class="field-hint">Accepts any accessible HTTP/HTTPS audio file.</p>
             </div>
           </div>
         </div>
 
-        <!-- Tab 3: IncuBrix Scenes -->
+        <!-- Tab 3: Structured Scenes -->
         <div class="tab-pane" id="tab-scenes">
-          <div class="field-group">
-            <label for="scenes-json">Custom Scene List (JSON format with text and visual_hint per scene)</label>
-            <textarea id="scenes-json" rows="5" class="code-editor">[
+          <div class="form-vertical-flow">
+            <div class="field-group full-width-group">
+              <label for="scenes-json">Custom Scene List (JSON)</label>
+              <textarea id="scenes-json" rows="5" class="code-editor">[
   {
     "text": "In 2025, corporate sales grew 40% across all markets.",
     "visual_hint": "Modern financial growth analytics dashboard on tablet"
@@ -185,25 +145,26 @@
     "visual_hint": "Professional business handshake in modern office sunlight"
   }
 ]</textarea>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- STEP 2: Full-Width Formatting & Content Guardrails -->
+      <!-- STEP 2: Full-Width Formatting & Visual Style Card -->
       <section class="card full-width-card">
-        <div class="card-title-bar">
-          <div class="step-num">2</div>
-          <div>
-            <h2>Formatting, Aspect Ratios & Safety Guardrails</h2>
-            <p class="card-caption">Set video dimensions, visual styling, avoidance parameters, and subtitle burn-in</p>
+        <div class="card-header-row">
+          <div class="step-badge">
+            <span class="step-num">2</span>
+            <h2>Formatting & Style</h2>
           </div>
         </div>
 
-        <div class="three-col-grid">
-          <!-- Col 1: Aspect Ratios -->
-          <div class="field-group">
+        <!-- Clean vertical group flow (no cluttered inlines) -->
+        <div class="form-vertical-flow">
+          <!-- Row 1: Aspect Ratios -->
+          <div class="field-group full-width-group">
             <label>Output Aspect Ratios</label>
-            <div class="pill-checkboxes">
+            <div class="pill-checkboxes full-width-pills">
               <label class="pill-check">
                 <input type="checkbox" id="ratio-16-9" value="16:9" checked>
                 <span class="pill-label">16:9 Landscape</span>
@@ -219,70 +180,59 @@
             </div>
           </div>
 
-          <!-- Col 2: Style & Avoid -->
-          <div class="field-group">
+          <!-- Row 2: Visual Style Guidance Select -->
+          <div class="field-group full-width-group">
             <label for="video-style">Visual Style Guidance</label>
-            <input type="text" id="video-style" value="bright, modern, real-world footage">
-            <label for="avoid-keywords" style="margin-top: 10px;">Content to Avoid</label>
-            <input type="text" id="avoid-keywords" placeholder="e.g. people's faces, alcohol" value="people's faces, alcohol">
+            <div class="select-wrapper">
+              <select id="video-style">
+                <option value="cinematic-real">Cinematic Real — High production live action footage</option>
+                <option value="real-time">Real-Time — Modern dynamic real-world broadcast footage</option>
+                <option value="animation">Animation — Kinetic vector motion graphics & 2D styling</option>
+                <option value="film">Film — 35mm warm tone cinematic film look</option>
+                <option value="anime">Anime — Vibrant Japanese animation aesthetic</option>
+                <option value="pixar">Pixar — 3D vibrant studio character render style</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Col 3: Subtitles & Action Button -->
-          <div class="field-group">
-            <label>Subtitles & Burn-in</label>
-            <div class="pill-checkboxes" style="margin-bottom: 12px;">
-              <label class="pill-check">
-                <input type="checkbox" id="burn-in-captions" checked>
-                <span class="pill-label">Burn-in Captions</span>
-              </label>
-              <label class="pill-check">
-                <input type="checkbox" id="generate-srt" checked disabled>
-                <span class="pill-label">Export .SRT</span>
-              </label>
+          <!-- Row 3: Character Selection Box -->
+          <div class="field-group full-width-group character-box-wrapper">
+            <label class="character-box-label">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+              Character in Video
+            </label>
+            <div class="char-chips" id="char-chips">
+              <button type="button" class="char-chip active" data-char="human">&#x1F9D1; Human</button>
+              <button type="button" class="char-chip" data-char="lion">&#x1F981; Lion</button>
+              <button type="button" class="char-chip" data-char="robot">&#x1F916; Robot</button>
+              <button type="button" class="char-chip" data-char="cat">&#x1F431; Cat</button>
+              <button type="button" class="char-chip" data-char="dog">&#x1F436; Dog</button>
+              <button type="button" class="char-chip" data-char="bird">&#x1F99C; Bird</button>
+              <button type="button" class="char-chip" data-char="astronaut">&#x1F9D1;&#x200D;&#x1F680; Astronaut</button>
+              <button type="button" class="char-chip" data-char="wizard">&#x1F9D9; Wizard</button>
+              <button type="button" class="char-chip" data-char="alien">&#x1F47D; Alien</button>
             </div>
+            <div class="char-custom-row">
+              <input type="text" id="character-type-input" placeholder="Or type any custom character: dragon, dinosaur, knight, fox…" maxlength="40">
+            </div>
+          </div>
 
-            <!-- Prominent Generation Button -->
-            <button id="btn-generate" class="submit-btn">
+          <!-- Row 4: Action Button Full Width -->
+          <div class="field-group full-width-group submit-row">
+            <button id="btn-generate" class="submit-btn full-width-btn">
               <span id="btn-text">Generate B-Roll Video</span>
               <span id="btn-spinner" class="spinner-dot hidden"></span>
             </button>
           </div>
         </div>
-
-        <!-- ── Character Box ── -->
-        <div class="character-box-section">
-          <label class="character-box-label">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-            Character in Video
-          </label>
-          <p class="field-hint" style="margin-bottom:10px">Pick a character type — they appear as an animated host in every scene with audio lip-sync.</p>
-          <div class="char-chips" id="char-chips">
-            <button type="button" class="char-chip active" data-char="human">&#x1F9D1; Human</button>
-            <button type="button" class="char-chip" data-char="lion">&#x1F981; Lion</button>
-            <button type="button" class="char-chip" data-char="robot">&#x1F916; Robot</button>
-            <button type="button" class="char-chip" data-char="cat">&#x1F431; Cat</button>
-            <button type="button" class="char-chip" data-char="dog">&#x1F436; Dog</button>
-            <button type="button" class="char-chip" data-char="bird">&#x1F99C; Bird</button>
-            <button type="button" class="char-chip" data-char="astronaut">&#x1F9D1;&#x200D;&#x1F680; Astronaut</button>
-            <button type="button" class="char-chip" data-char="wizard">&#x1F9D9; Wizard</button>
-            <button type="button" class="char-chip" data-char="alien">&#x1F47D; Alien</button>
-          </div>
-          <div class="char-custom-row">
-            <input type="text" id="character-type-input" placeholder="Or type your own: dragon, dinosaur, knight, fox…" maxlength="40">
-          </div>
-        </div>
       </section>
 
-
-      <!-- STEP 3: Full-Width Video Output, Timeline & Provenance -->
+      <!-- STEP 3: Full-Width Video Output Card -->
       <section class="card full-width-card output-card">
-        <div class="card-title-bar justify-between">
-          <div class="flex-align-center gap-3">
-            <div class="step-num step-accent">3</div>
-            <div>
-              <h2>Video Output, Timeline & Provenance</h2>
-              <p class="card-caption">Preview multi-ratio videos, inspect provenance, and swap clips on the fly</p>
-            </div>
+        <div class="card-header-row justify-between">
+          <div class="step-badge">
+            <span class="step-num step-accent">3</span>
+            <h2>Video Output & Timeline</h2>
           </div>
           <span class="status-badge" id="job-status-badge">Standby</span>
         </div>
@@ -301,17 +251,30 @@
         <!-- Video Player & Scene Timeline Display -->
         <div class="player-wrapper hidden" id="video-player-wrapper">
           <div class="output-two-col">
-            <!-- Left: Video Player & Downloads -->
+            <!-- Left: Video Player, Controls & Downloads -->
             <div class="video-column">
-              <div class="aspect-bar">
-                <span class="aspect-label">Preview Aspect Ratio:</span>
-                <div class="ratio-tabs" id="ratio-buttons">
-                  <!-- Dynamically populated buttons -->
+              <div class="player-toolbar">
+                <div class="aspect-bar">
+                  <span class="aspect-label">Aspect:</span>
+                  <div class="ratio-tabs" id="ratio-buttons">
+                    <!-- Populated dynamically -->
+                  </div>
                 </div>
+                <!-- Captions ON/OFF Toggle -->
+                <button type="button" class="caption-toggle-btn active" id="btn-caption-toggle" title="Toggle burned-in captions overlay">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <path d="M7 15h3a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2H7v6Z"></path>
+                    <path d="M14 15h3a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-3v6Z"></path>
+                  </svg>
+                  <span id="caption-status-text">Captions: ON</span>
+                </button>
               </div>
               
-              <div class="video-viewport">
+              <div class="video-viewport" id="video-viewport">
                 <video id="main-video" controls playsinline></video>
+                <!-- Dynamic live caption overlay when toggled on -->
+                <div id="video-caption-overlay" class="video-caption-overlay"></div>
               </div>
 
               <div class="action-bar">
@@ -336,12 +299,11 @@
             <!-- Right: Interactive Scene Timeline -->
             <div class="timeline-column" id="timeline-container">
               <div class="timeline-title-row">
-                <h3>Scene Segmentation & Provenance</h3>
-                <span class="clean-badge">100% Speech-Covered</span>
+                <h3>Scene Segmentation</h3>
+                <span class="clean-badge">Speech-Covered</span>
               </div>
-              <p class="timeline-hint">Every clip is timed to voice pauses. Click <strong>Swap Clip</strong> to replace any scene with sub-linear fast partial re-render.</p>
               <div class="scene-stream" id="scene-list">
-                <!-- Dynamically populated scene cards -->
+                <!-- Populated dynamically -->
               </div>
             </div>
           </div>
@@ -350,9 +312,9 @@
         <!-- Inspection Tabs (Timeline / SRT / Manifest) -->
         <div class="inspector-box hidden" id="inspect-section">
           <div class="inspector-tabs">
-            <button class="inspect-btn active" data-inspect="inspect-manifest">Output Manifest (JSON)</button>
-            <button class="inspect-btn" data-inspect="inspect-timeline">Scene Timeline (JSON)</button>
-            <button class="inspect-btn" data-inspect="inspect-srt">SRT Captions</button>
+            <button class="inspect-btn active" data-inspect="inspect-manifest">Manifest (JSON)</button>
+            <button class="inspect-btn" data-inspect="inspect-timeline">Timeline (JSON)</button>
+            <button class="inspect-btn" data-inspect="inspect-srt">Captions (.SRT)</button>
           </div>
           <div class="inspector-content">
             <pre id="inspect-content" class="code-view">Outputs will appear here...</pre>
@@ -374,7 +336,7 @@
             </svg>
           </div>
           <h3>Awaiting Video Generation</h3>
-          <p>Fill out the script in Step 1, review your formatting in Step 2, then click <strong>Generate B-Roll Video</strong> to produce your video.</p>
+          <p>Configure your script and visual preferences above, then click <strong>Generate B-Roll Video</strong>.</p>
         </div>
       </section>
 
@@ -387,7 +349,6 @@
       <div class="modal-head">
         <div>
           <h3>Replace Clip for Scene <span id="swap-scene-idx">0</span></h3>
-          <p class="modal-sub">Only this scene will be re-rendered; unaffected segments are preserved.</p>
         </div>
         <button class="modal-dismiss" id="btn-close-modal">&times;</button>
       </div>
@@ -396,18 +357,18 @@
           <span class="quote-label">Current Narration:</span>
           <p id="swap-scene-narration"></p>
         </div>
-        <div class="field-group">
-          <label for="swap-query">Replacement Search Query / Concept</label>
+        <div class="field-group full-width-group">
+          <label for="swap-query">Replacement Search Query</label>
           <input type="text" id="swap-query" placeholder="e.g. Modern high-tech skyline at sunset">
         </div>
-        <div class="field-group">
-          <label for="swap-source">Target Footage Provider</label>
+        <div class="field-group full-width-group">
+          <label for="swap-source">Footage Provider</label>
           <div class="select-wrapper">
             <select id="swap-source">
               <option value="auto">Auto (Smart Rule-Based Selection)</option>
               <option value="pexels">Pexels Commercial Stock API</option>
               <option value="pixabay">Pixabay Commercial Stock API</option>
-              <option value="ai_gen">IncuBrix Kinetic Synthesis</option>
+              <option value="ai_gen">Scriptify Motion Synthesis</option>
             </select>
           </div>
         </div>

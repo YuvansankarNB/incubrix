@@ -211,7 +211,9 @@ class JobManager:
         # Step 5: Subtitle & Video Assembly
         t4 = time.time()
         srt_file = job_dir / "captions.srt"
+        vtt_file = job_dir / "captions.vtt"
         video_renderer.generate_srt(scenes, srt_file)
+        video_renderer.generate_vtt(scenes, vtt_file)
 
         aspect_ratios = req.get("aspect_ratios") or ["16:9"]
         video_urls = {}
@@ -268,6 +270,7 @@ class JobManager:
         state.outputs = {
             "videos": video_urls,
             "captions_srt": storage.get_download_url(srt_file),
+            "captions_vtt": storage.get_download_url(vtt_file),
             "timeline": storage.get_download_url(timeline_file),
             "manifest": storage.get_download_url(manifest_file)
         }

@@ -1,4 +1,4 @@
-// IncuBrix Web Engine Controller (Light Professional UI)
+// Scriptify Web Engine Controller (Professional Light UI)
 
 let currentJobId = null;
 let currentOutputs = null;
@@ -7,6 +7,8 @@ let cachedManifest = null;
 let cachedTimeline = null;
 let cachedSrt = null;
 let selectedSwapIndex = null;
+let captionsEnabled = true;
+let captionCues = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
@@ -16,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initInspectTabs();
   initFileUploadUI();
   initCharacterBox();
+  initCaptionToggle();
+  initVideoTimeUpdate();
 });
 
 // Character Box — chip selection + custom input
@@ -28,22 +32,19 @@ function initCharacterBox() {
     chip.addEventListener('click', () => {
       chips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      customInput.value = ''; // clear custom when chip chosen
+      customInput.value = '';
     });
   });
 
-  // If user starts typing custom, deselect chips
   customInput.addEventListener('input', () => {
     if (customInput.value.trim()) {
       chips.forEach(c => c.classList.remove('active'));
     } else {
-      // Re-select Human if input cleared
       const humanChip = document.querySelector('#char-chips .char-chip[data-char="human"]');
       if (humanChip) humanChip.classList.add('active');
     }
   });
 }
-
 
 // 1. Tab Navigation
 function initTabs() {
@@ -71,17 +72,11 @@ function initPresets() {
     if (pane) pane.classList.add('active');
   };
 
-  function setMascot(msg) {
-    const el = document.getElementById('mascot-message');
-    if (el) el.textContent = msg;
-  }
-
   document.getElementById('preset-finance')?.addEventListener('click', () => {
     selectTab('tab-script');
     document.getElementById('script-text').value = 
       "In 2025, our corporate sales grew 40% across all markets. When you deposit capital into a high yield savings bank, compound interest works quietly in your favor. Every smart investment begins with patience.";
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
-    setMascot("📈 Great choice! I will synthesize ascending financial stock graphs, candlestick growth curves, and the animated character host!");
   });
 
   document.getElementById('preset-cloud')?.addEventListener('click', () => {
@@ -89,7 +84,6 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "Modern cloud computing infrastructure powers millions of servers globally. Our distributed clusters guarantee zero downtime, automated failovers, and resilient data backups.";
     document.getElementById('tts-voice').value = "en-US-AriaNeural";
-    setMascot("☁️ High-tech choice! I will synthesize 3D cybernetic perspective grids, server nodes, and pulse circuits!");
   });
 
   document.getElementById('preset-hindi')?.addEventListener('click', () => {
@@ -97,7 +91,6 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "तकनीक और नवाचार की दुनिया में आपका स्वागत है। हमारा उद्देश्य रचनाकारों को कृत्रिम बुद्धिमत्ता के साथ शक्तिशाली वीडियो बनाने में सहायता करना है।";
     document.getElementById('tts-voice').value = "hi-IN-female";
-    setMascot("🇮🇳 बहुत बढ़िया! हिंदी में वॉयसओवर और असीमित एनिमेटेड दृश्य तैयार कर रहा हूँ!");
   });
 
   document.getElementById('preset-tamil')?.addEventListener('click', () => {
@@ -105,7 +98,6 @@ function initPresets() {
     document.getElementById('script-text').value = 
       "செயற்கை நுண்ணறிவு மூலம் காணொளிகளை உருவாக்குவது இப்போது மிக எளிது. உங்கள் படைப்பாற்றலை அடுத்த கட்டத்திற்கு கொண்டு செல்லுங்கள்.";
     document.getElementById('tts-voice').value = "ta-IN-female";
-    setMascot("✨ அருமை! தமிழ் குரல்வழியில் அனிமேஷன் காட்சிகளை உருவாக்குகிறேன்!");
   });
 }
 
@@ -128,22 +120,20 @@ function initFormSubmit() {
   btn.addEventListener('click', async () => {
     const activeTab = document.querySelector('.seg-btn.active').getAttribute('data-tab');
     const aspectRatios = [];
-    if (document.getElementById('ratio-16-9').checked) aspectRatios.push("16:9");
-    if (document.getElementById('ratio-9-16').checked) aspectRatios.push("9:16");
-    if (document.getElementById('ratio-1-1').checked) aspectRatios.push("1:1");
+    if (document.getElementById('ratio-16-9')?.checked) aspectRatios.push("16:9");
+    if (document.getElementById('ratio-9-16')?.checked) aspectRatios.push("9:16");
+    if (document.getElementById('ratio-1-1')?.checked) aspectRatios.push("1:1");
 
     if (aspectRatios.length === 0) {
       alert("Please select at least one aspect ratio.");
       return;
     }
 
-    const style = document.getElementById('video-style').value.trim();
-    const avoidRaw = document.getElementById('avoid-keywords').value;
-    const avoid = avoidRaw.split(',').map(s => s.trim()).filter(Boolean);
-    const burnIn = document.getElementById('burn-in-captions').checked;
+    const styleEl = document.getElementById('video-style');
+    const style = styleEl ? styleEl.value.trim() : "cinematic-real";
 
     // Read character type — custom text input overrides chip selection
-    const charCustom = (document.getElementById('character-type-input').value || '').trim();
+    const charCustom = (document.getElementById('character-type-input')?.value || '').trim();
     const activeChip = document.querySelector('#char-chips .char-chip.active');
     const characterType = charCustom || (activeChip ? activeChip.dataset.char : 'human');
 
@@ -153,15 +143,14 @@ function initFormSubmit() {
 
     try {
       let resp;
-      if (activeTab === 'tab-audio' && document.getElementById('audio-upload').files.length > 0) {
+      if (activeTab === 'tab-audio' && document.getElementById('audio-upload')?.files.length > 0) {
         // Multipart upload
         const file = document.getElementById('audio-upload').files[0];
         const formData = new FormData();
         formData.append('file', file);
         formData.append('aspect_ratios', aspectRatios.join(','));
         formData.append('style', style);
-        formData.append('avoid', avoid.join(','));
-        formData.append('burn_in_captions', burnIn);
+        formData.append('burn_in_captions', true);
         formData.append('character_type', characterType);
 
         resp = await fetch('/api/v1/broll/jobs/upload', {
@@ -174,8 +163,8 @@ function initFormSubmit() {
         let payload = {
           aspect_ratios: aspectRatios,
           style: style,
-          avoid: avoid,
-          captions: { burn_in: burnIn, srt: true },
+          avoid: [],
+          captions: { burn_in: true, srt: true },
           character_type: characterType
         };
 
@@ -183,7 +172,7 @@ function initFormSubmit() {
           payload.script = document.getElementById('script-text').value.trim();
           payload.voice = document.getElementById('tts-voice').value;
           if (!payload.script) {
-            alert("Please enter a text script or click a quick preset.");
+            alert("Please enter a text script or click a preset.");
             setLoadingState(false);
             return;
           }
@@ -241,8 +230,6 @@ function setLoadingState(loading) {
     const badge = document.getElementById('job-status-badge');
     badge.textContent = "Running";
     badge.className = "status-badge badge-running";
-    const mascot = document.getElementById('mascot-message');
-    if (mascot) mascot.textContent = "⚡ Generating your B-roll video! Transcribing speech with Faster-Whisper, animating the character host, and rendering scene cuts...";
   } else {
     txt.textContent = "Generate B-Roll Video";
     spinner.classList.add('hidden');
@@ -296,9 +283,6 @@ async function renderResults(outputs) {
   document.getElementById('timeline-container').classList.remove('hidden');
   document.getElementById('inspect-section').classList.remove('hidden');
 
-  const mascot = document.getElementById('mascot-message');
-  if (mascot) mascot.textContent = "🎉 Awesome! Your finished video is ready! Enjoy the playback with animated character host, switch aspect ratios (16:9 / 9:16), or swap any scene clip below!";
-
   // Multi-aspect ratio switcher
   const ratioBtnContainer = document.getElementById('ratio-buttons');
   ratioBtnContainer.innerHTML = '';
@@ -324,6 +308,8 @@ async function renderResults(outputs) {
   const srtBtn = document.getElementById('btn-download-srt');
   if (outputs.captions_srt) {
     srtBtn.href = outputs.captions_srt;
+    // Load and parse captions for live interactive toggle
+    loadCaptionCues(outputs.captions_srt);
   }
 
   // Fetch and display timeline
@@ -346,6 +332,88 @@ function loadVideo(url) {
   video.src = url;
   video.load();
   document.getElementById('btn-download-video').href = url;
+}
+
+// Captions Toggle & Parser
+function initCaptionToggle() {
+  const toggleBtn = document.getElementById('btn-caption-toggle');
+  const statusTxt = document.getElementById('caption-status-text');
+  const overlay = document.getElementById('video-caption-overlay');
+
+  if (!toggleBtn) return;
+
+  toggleBtn.addEventListener('click', () => {
+    captionsEnabled = !captionsEnabled;
+    if (captionsEnabled) {
+      toggleBtn.classList.add('active');
+      statusTxt.textContent = "Captions: ON";
+    } else {
+      toggleBtn.classList.remove('active');
+      statusTxt.textContent = "Captions: OFF";
+      if (overlay) {
+        overlay.textContent = '';
+        overlay.classList.remove('visible');
+      }
+    }
+  });
+}
+
+function parseSrtTimeToSeconds(timeStr) {
+  // 00:00:01,234
+  const parts = timeStr.trim().replace(',', '.').split(':');
+  if (parts.length === 3) {
+    return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+  }
+  return 0;
+}
+
+async function loadCaptionCues(srtUrl) {
+  try {
+    const resp = await fetch(srtUrl);
+    if (!resp.ok) return;
+    const text = await resp.text();
+    captionCues = [];
+
+    // Parse standard SRT format
+    const blocks = text.trim().split(/\r?\n\r?\n/);
+    blocks.forEach(block => {
+      const lines = block.split(/\r?\n/);
+      if (lines.length >= 3) {
+        const timeLine = lines[1];
+        const match = timeLine.match(/(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,\.]\d{3})/);
+        if (match) {
+          const start = parseSrtTimeToSeconds(match[1]);
+          const end = parseSrtTimeToSeconds(match[2]);
+          const captionText = lines.slice(2).join(' ');
+          captionCues.push({ start, end, text: captionText });
+        }
+      }
+    });
+  } catch (e) {
+    console.warn("Could not load captions for overlay:", e);
+  }
+}
+
+function initVideoTimeUpdate() {
+  const video = document.getElementById('main-video');
+  const overlay = document.getElementById('video-caption-overlay');
+  if (!video || !overlay) return;
+
+  video.addEventListener('timeupdate', () => {
+    if (!captionsEnabled || captionCues.length === 0) {
+      overlay.classList.remove('visible');
+      return;
+    }
+
+    const cur = video.currentTime;
+    const activeCue = captionCues.find(c => cur >= c.start && cur <= c.end);
+    if (activeCue) {
+      overlay.textContent = activeCue.text;
+      overlay.classList.add('visible');
+    } else {
+      overlay.classList.remove('visible');
+    }
+  });
 }
 
 // 6. Timeline Cards & Provenance Display
@@ -373,32 +441,38 @@ function renderTimelineCards(scenes) {
           <span class="tag tag-license">${clip.license || 'Commercial Free'}</span>
         </div>
       </div>
-      <div>
-        <button class="btn-swap-clip" onclick="openSwapModal(${s.scene_index}, '${escapeQuotes(s.narration)}')">Swap Clip</button>
-      </div>
+      <button class="btn-swap" data-index="${s.scene_index}">Swap Clip</button>
     `;
     list.appendChild(card);
   });
+
+  // Attach swap buttons
+  document.querySelectorAll('.btn-swap').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.getAttribute('data-index'));
+      openSwapModal(idx, scenes[idx]);
+    });
+  });
 }
 
-function escapeQuotes(str) {
-  return (str || '').replace(/'/g, "\\'");
-}
-
-// 7. Clip Swapping Modal Logic
+// 7. Swap Clip Modal
 function initModal() {
   const modal = document.getElementById('swap-modal');
   document.getElementById('btn-close-modal').addEventListener('click', () => modal.classList.add('hidden'));
   document.getElementById('btn-cancel-swap').addEventListener('click', () => modal.classList.add('hidden'));
 
   document.getElementById('btn-confirm-swap').addEventListener('click', async () => {
-    if (selectedSwapIndex === null || !currentJobId) return;
-
-    const query = document.getElementById('swap-query').value.trim();
+    const newQuery = document.getElementById('swap-query').value.trim();
     const source = document.getElementById('swap-source').value;
-    const confirmBtn = document.getElementById('btn-confirm-swap');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = "Swapping...";
+
+    if (!newQuery) {
+      alert("Please enter a new concept query.");
+      return;
+    }
+
+    const swapBtn = document.getElementById('btn-confirm-swap');
+    swapBtn.disabled = true;
+    swapBtn.textContent = "Re-rendering...";
 
     try {
       const resp = await fetch(`/api/v1/jobs/${currentJobId}/swap-clip`, {
@@ -406,56 +480,56 @@ function initModal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           scene_index: selectedSwapIndex,
-          new_query: query || null,
+          new_query: newQuery,
           preferred_source: source === 'auto' ? null : source
         })
       });
 
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error ? data.error.message : "Swap failed");
+      if (!resp.ok) {
+        throw new Error(data.error ? data.error.message : "Failed to swap clip");
+      }
 
       modal.classList.add('hidden');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Fast Re-Render Scene";
-      
-      // Reload updated outputs
       renderResults(data.outputs);
-    } catch (e) {
-      alert("Error swapping clip: " + e.message);
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Fast Re-Render Scene";
+    } catch (err) {
+      alert("Failed to swap clip: " + err.message);
+    } finally {
+      swapBtn.disabled = false;
+      swapBtn.textContent = "Fast Re-Render Scene";
     }
   });
 }
 
-window.openSwapModal = function(sceneIdx, narration) {
-  selectedSwapIndex = sceneIdx;
-  document.getElementById('swap-scene-idx').textContent = sceneIdx;
-  document.getElementById('swap-scene-narration').textContent = narration;
-  document.getElementById('swap-query').value = '';
+function openSwapModal(index, scene) {
+  selectedSwapIndex = index;
+  document.getElementById('swap-scene-idx').textContent = index + 1;
+  document.getElementById('swap-scene-narration').textContent = `"${scene.narration}"`;
+  document.getElementById('swap-query').value = scene.search_query || '';
   document.getElementById('swap-modal').classList.remove('hidden');
-};
+}
 
-// 8. Inspect Tab Switcher
+// 8. Inspector Tabs
 function initInspectTabs() {
   const btns = document.querySelectorAll('.inspect-btn');
   btns.forEach(btn => {
     btn.addEventListener('click', async () => {
       btns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const type = btn.getAttribute('data-inspect');
-      const pre = document.getElementById('inspect-content');
 
-      if (type === 'inspect-manifest' && cachedManifest) {
-        pre.textContent = JSON.stringify(cachedManifest, null, 2);
-      } else if (type === 'inspect-timeline' && cachedTimeline) {
-        pre.textContent = JSON.stringify(cachedTimeline, null, 2);
-      } else if (type === 'inspect-srt' && currentOutputs?.captions_srt) {
-        if (!cachedSrt) {
+      const target = btn.getAttribute('data-inspect');
+      const contentEl = document.getElementById('inspect-content');
+
+      if (target === 'inspect-manifest') {
+        contentEl.textContent = JSON.stringify(cachedManifest, null, 2);
+      } else if (target === 'inspect-timeline') {
+        contentEl.textContent = JSON.stringify(cachedTimeline, null, 2);
+      } else if (target === 'inspect-srt') {
+        if (!cachedSrt && currentOutputs?.captions_srt) {
           const resp = await fetch(currentOutputs.captions_srt);
           cachedSrt = await resp.text();
         }
-        pre.textContent = cachedSrt;
+        contentEl.textContent = cachedSrt || "No captions available.";
       }
     });
   });

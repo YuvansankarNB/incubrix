@@ -37,6 +37,20 @@ class VideoRenderer:
         with open(output_path, "w", encoding="utf-8") as f:
             f.writelines(lines)
 
+    def generate_vtt(self, scenes: List[Dict[str, Any]], output_path: Path):
+        """Generates standard WebVTT (.vtt) file for native HTML5 video track elements."""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        lines = ["WEBVTT\n\n"]
+        for i, s in enumerate(scenes):
+            # VTT time format: HH:MM:SS.mmm
+            start_str = format_srt_time(s["start_time"]).replace(",", ".")
+            end_str = format_srt_time(s["end_time"]).replace(",", ".")
+            text = s["narration"].strip()
+            lines.append(f"{i+1}\n{start_str} --> {end_str}\n{text}\n\n")
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+
     def prepare_scene_segment(
         self,
         clip_path: Path,
