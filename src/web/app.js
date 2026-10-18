@@ -245,6 +245,34 @@ function initFileUploadUI() {
       }
     });
   }
+
+  // Pre-loaded sample audio buttons
+  document.getElementById('btn-load-sample-doctor')?.addEventListener('click', () => {
+    const audioUrlInput = document.getElementById('audio-url');
+    if (audioUrlInput) {
+      audioUrlInput.value = `${window.location.origin}/static/sample_doctor_patient_dialogue.mp3`;
+      if (label) label.textContent = "Loaded: sample_doctor_patient_dialogue.mp3 (35s)";
+      // Auto-select Doctor & Patient character duo
+      const duoBtn = document.querySelector('.char-duo-btn[data-duo="doctor,patient"]');
+      if (duoBtn) {
+        duoBtn.click();
+      } else {
+        const charInput = document.getElementById('character-type-input');
+        if (charInput) {
+          charInput.value = "Doctor, Patient";
+          charInput.dispatchEvent(new Event('input'));
+        }
+      }
+    }
+  });
+
+  document.getElementById('btn-load-sample-routine')?.addEventListener('click', () => {
+    const audioUrlInput = document.getElementById('audio-url');
+    if (audioUrlInput) {
+      audioUrlInput.value = `${window.location.origin}/static/sample_routine_voiceover.mp3`;
+      if (label) label.textContent = "Loaded: sample_routine_voiceover.mp3 (19s)";
+    }
+  });
 }
 
 // 3. Form Submission & Job Dispatch
