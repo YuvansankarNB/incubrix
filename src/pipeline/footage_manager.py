@@ -141,7 +141,18 @@ class FootageManager:
         random.seed(q_hash % 100000)
 
         # Detect semantic theme with high-specificity precedence
-        if any(w in combined_text for w in ["tweak", "lock in", "focus", "quick move"]):
+        if any(w in combined_text for w in [
+            "doctor", "patient", "hospital", "clinic", "medical", "surgery", "diagnosis", 
+            "prescription", "medicine", "health", "nurse", "treatment", "illness", "recovery", "lab report", "vitals"
+        ]):
+            theme_mode = "hospital"
+            theme_title = "Clinical Hospital & Medical Ward"
+        elif any(w in combined_text for w in [
+            "king", "advisor", "citadel", "kingdom", "realm", "throne", "castle", "royal", "sovereign", "monarch"
+        ]):
+            theme_mode = "royal"
+            theme_title = "Royal Citadel & Throne Room"
+        elif any(w in combined_text for w in ["tweak", "lock in", "focus", "quick move"]):
             theme_mode = "tweak"
             theme_title = "Hyper-Focus Mode Optimization"
         elif any(w in combined_text for w in ["second", "seconds", "instant", "instantly", "fixes", "5 sec"]):
@@ -748,6 +759,104 @@ class FootageManager:
                 fill_w = int((card3_w - 44) * min(1.0, progress * 1.4))
                 cv2.rectangle(canvas, (card3_x + 22, card3_y + 110), (card3_x + 22 + fill_w, card3_y + 135), (60, 180, 255), -1)
 
+            # ----------------- THEME: CLINICAL HOSPITAL & MEDICAL WARD -----------------
+            elif theme_mode == "hospital":
+                # Deep medical cyan-charcoal hospital walls
+                canvas[:] = (32, 28, 22)
+                cursor_target = (int(width * 0.38), int(height * 0.38))
+
+                floor_y = int(height * 0.82)
+                cv2.rectangle(canvas, (0, floor_y), (width, height), (22, 18, 16), -1)
+                cv2.line(canvas, (0, floor_y), (width, floor_y), (75, 65, 55), 3, cv2.LINE_AA)
+                for gx in range(0, int(width * 0.74), 110):
+                    cv2.line(canvas, (gx, 0), (gx, floor_y), (44, 38, 30), 1)
+
+                # 1. ICU Patient Vitals Monitor
+                mon_x, mon_y, mon_w, mon_h = int(width * 0.08), int(height * 0.12), int(width * 0.48), 340
+                cv2.rectangle(canvas, (mon_x, mon_y), (mon_x + mon_w, mon_y + mon_h), (18, 22, 22), -1)
+                cv2.rectangle(canvas, (mon_x, mon_y), (mon_x + mon_w, mon_y + mon_h), (50, 180, 120), 2, cv2.LINE_AA)
+
+                # Monitor Header
+                cv2.rectangle(canvas, (mon_x, mon_y), (mon_x + mon_w, mon_y + 42), (24, 32, 28), -1)
+                # Medical Cross Icon
+                cv2.circle(canvas, (mon_x + 26, mon_y + 21), 12, (5, 150, 105), -1, cv2.LINE_AA)
+                cv2.line(canvas, (mon_x + 26, mon_y + 13), (mon_x + 26, mon_y + 29), (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.line(canvas, (mon_x + 18, mon_y + 21), (mon_x + 34, mon_y + 21), (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "ICU CLINICAL MONITOR // REAL-TIME VITALS", (mon_x + 48, mon_y + 28),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.54, (240, 240, 240), 1, cv2.LINE_AA)
+
+                # Live Heart Rate & Vitals Readouts
+                pulse_bpm = int(72 + math.sin(t * 1.5) * 3)
+                cv2.putText(canvas, f"HR: {pulse_bpm} BPM", (mon_x + 24, mon_y + 88),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.85, (60, 240, 120), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "SPO2: 99%", (mon_x + 230, mon_y + 88),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.85, (240, 200, 60), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "BP: 120/80", (mon_x + 400, mon_y + 88),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.75, (80, 180, 240), 2, cv2.LINE_AA)
+
+                # Real-Time Animated ECG Waveform
+                ecg_y = mon_y + 175
+                cv2.line(canvas, (mon_x + 20, ecg_y), (mon_x + mon_w - 20, ecg_y), (30, 40, 35), 1)
+                ecg_pts = []
+                for x_idx in range(mon_w - 40):
+                    lx = mon_x + 20 + x_idx
+                    phase = (lx - int(t * 220)) % 220
+                    if 80 <= phase <= 95:
+                        dy = -int(math.sin((phase - 80) / 15 * math.pi) * 16)
+                    elif 105 <= phase <= 112:
+                        dy = int(10)
+                    elif 113 <= phase <= 124:
+                        dy = -int(math.sin((phase - 113) / 11 * math.pi) * 62)
+                    elif 125 <= phase <= 132:
+                        dy = int(14)
+                    elif 145 <= phase <= 170:
+                        dy = -int(math.sin((phase - 145) / 25 * math.pi) * 20)
+                    else:
+                        dy = int(random.uniform(-1, 1))
+                    ecg_pts.append((lx, ecg_y + dy))
+
+                for i in range(len(ecg_pts) - 1):
+                    cv2.line(canvas, ecg_pts[i], ecg_pts[i+1], (60, 255, 140), 2, cv2.LINE_AA)
+
+                # Status Diagnostic Banner
+                cv2.rectangle(canvas, (mon_x + 20, mon_y + 245), (mon_x + mon_w - 20, mon_y + 315), (24, 32, 28), -1)
+                cv2.putText(canvas, "LAB STATUS: RECOVERY PROTOCOL ACTIVE // PROGNOSIS: FULL RECOVERY",
+                            (mon_x + 28, mon_y + 284), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (180, 240, 200), 1, cv2.LINE_AA)
+
+                # 2. IV Drip Stand Silhouette
+                iv_x = int(width * 0.04)
+                cv2.line(canvas, (iv_x, int(height * 0.22)), (iv_x, floor_y), (85, 80, 75), 3, cv2.LINE_AA)
+                cv2.ellipse(canvas, (iv_x, int(height * 0.25)), (14, 24), 0, 0, 360, (180, 200, 210), -1, cv2.LINE_AA)
+
+            # ----------------- THEME: ROYAL CITADEL & THRONE ROOM -----------------
+            elif theme_mode == "royal":
+                canvas[:] = (22, 16, 28)
+                cursor_target = (int(width * 0.38), int(height * 0.38))
+
+                # Castle stone masonry
+                for sy in range(0, height, 85):
+                    offset = 45 if (sy // 85) % 2 == 1 else 0
+                    cv2.line(canvas, (0, sy), (int(width * 0.74), sy), (35, 26, 42), 2)
+                    for sx in range(offset, int(width * 0.74), 95):
+                        cv2.line(canvas, (sx, sy), (sx, sy + 85), (35, 26, 42), 2)
+
+                # Torches with animated flickering flames
+                for tx in [int(width * 0.08), int(width * 0.54)]:
+                    ty = int(height * 0.32)
+                    cv2.rectangle(canvas, (tx - 8, ty), (tx + 8, ty + 38), (40, 30, 20), -1)
+                    flame_h = int(22 + math.sin(t * 14 + tx) * 7)
+                    cv2.ellipse(canvas, (tx, ty - 10), (13, flame_h), 0, 0, 360, (20, 120, 240), -1, cv2.LINE_AA)
+                    cv2.ellipse(canvas, (tx, ty - 10), (7, int(flame_h * 0.60)), 0, 0, 360, (50, 210, 255), -1, cv2.LINE_AA)
+
+                # Royal Citadel Banner Card
+                r_card_x, r_card_y, r_card_w, r_card_h = int(width * 0.14), int(height * 0.14), int(width * 0.38), 300
+                cv2.rectangle(canvas, (r_card_x, r_card_y), (r_card_x + r_card_w, r_card_y + r_card_h), (35, 18, 28), -1)
+                cv2.rectangle(canvas, (r_card_x, r_card_y), (r_card_x + r_card_w, r_card_y + r_card_h), (40, 180, 220), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "ROYAL CITADEL COUNCIL", (r_card_x + 28, r_card_y + 44),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.72, (240, 220, 200), 2, cv2.LINE_AA)
+                cv2.putText(canvas, "DEFENSE STRATEGY // REALM WATCHTOWERS", (r_card_x + 28, r_card_y + 88),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.54, (80, 180, 240), 1, cv2.LINE_AA)
+
             # ----------------- THEME 11: CREATIVE MOTION FALLBACK -----------------
             else:
                 canvas[:] = (26, 16, 26)
@@ -860,7 +969,9 @@ class FootageManager:
                                 lip_sync_energy: float,
                                 bubble_color=(100, 220, 255),
                                 bg_color=(28, 22, 34)):
-        """8-bar animated EQ speech-bubble above the character's head."""
+        """8-bar animated EQ speech-bubble above the character's head (only when actively speaking)."""
+        if lip_sync_energy <= 0.04:
+            return
         bx, by = cx - 140, cy - 150
         cv2.rectangle(canvas, (bx, by), (bx + 220, by + 55), bg_color, -1)
         cv2.rectangle(canvas, (bx, by), (bx + 220, by + 55), bubble_color, 2, cv2.LINE_AA)
@@ -925,6 +1036,14 @@ class FootageManager:
         """Resolves a character name or theme to (render_fn, display_name)."""
         n = (name or "").lower().strip()
         custom_map = {
+            "doctor":     (self._char_doctor, "Doctor"),
+            "physician":  (self._char_doctor, "Doctor"),
+            "surgeon":    (self._char_doctor, "Doctor"),
+            "patient":    (self._char_patient, "Patient"),
+            "king":       (self._char_king, "King"),
+            "queen":      (self._char_king, "Queen"),
+            "advisor":    (self._char_advisor, "Advisor"),
+            "minister":   (self._char_advisor, "Advisor"),
             "lion":       (self._char_lion, "Lion"),
             "robot":      (self._char_robot, "Robot"),
             "cat":        (self._char_cat, "Cat"),
@@ -942,8 +1061,6 @@ class FootageManager:
             "analyst":    (self._char_analyst, "Analyst"),
             "engineer":   (self._char_engineer, "Engineer"),
             "banker":     (self._char_banker, "Banker"),
-            "doctor":     (self._char_analyst, "Doctor"),
-            "patient":    (self._char_tired_worker, "Patient"),
             "coach":      (self._char_coach, "Coach"),
             "hacker":     (self._char_hacker, "Hacker"),
             "executive":  (self._char_executive, "Executive"),
@@ -958,6 +1075,8 @@ class FootageManager:
                 return fn, tag
 
         theme_map = {
+            "hospital": (self._char_doctor, "Doctor"),
+            "royal":    (self._char_king, "King"),
             "warning":  (self._char_analyst, "Analyst"),
             "waste":    (self._char_tired_worker, "Worker"),
             "calendar": (self._char_coach, "Coach"),
@@ -989,24 +1108,45 @@ class FootageManager:
         Renders a two-character dramatic discussion / dialogue scene.
         Character 1 sits on the left (cx ≈ 0.28 * width).
         Character 2 sits on the right (cx ≈ 0.80 * width).
-        Speakers dynamically alternate lip-sync, expressive eyes, and dialogue indicators.
+        STRICT LIP-SYNC: ONLY the currently speaking character moves their mouth and displays
+        an audio equalizer speech bubble. The listening character has ZERO mouth motion.
         """
         fn1, tag1 = self._get_char_renderer(char1_name, theme)
         fn2, tag2 = self._get_char_renderer(char2_name, theme)
         if fn1 == fn2 and tag1.lower() == "human":
-            # Differentiate two humans in dialogue
+            # Differentiate two generic humans in dialogue
             fn2 = self._char_engineer
             tag2 = "Engineer"
 
-        # Dialogue alternation: cycle speaking role every ~2.5s for natural conversation
-        cycle = 2.5
-        speaker1_active = (int(t / cycle) % 2 == 0)
+        # Determine active speaker using scene_text dialogue cues
+        txt_lower = (scene_text or "").lower().strip()
+        c1_tokens = [char1_name.lower(), tag1.lower(), "doctor", "dr.", "dr:", "alex", "king", "speaker 1", "first"]
+        c2_tokens = [char2_name.lower(), tag2.lower(), "patient", "morgan", "nova", "advisor", "speaker 2", "second"]
 
-        # Lip-sync energy: active speaker speaks, listening character reacts softly
-        energy1 = lip_sync_energy if speaker1_active else max(0.0, lip_sync_energy * 0.12)
-        energy2 = lip_sync_energy if not speaker1_active else max(0.0, lip_sync_energy * 0.12)
+        c1_matches = any(tok in txt_lower[:35] for tok in c1_tokens)
+        c2_matches = any(tok in txt_lower[:35] for tok in c2_tokens)
 
-        # 1. Render Character 1 (Left side: cx ≈ 0.28 * width)
+        if c1_matches and not c2_matches:
+            speaker1_active = True
+        elif c2_matches and not c1_matches:
+            speaker1_active = False
+        else:
+            # When no explicit prefix is given, alternate speaking role stably per sentence/scene
+            text_seed = sum(ord(c) for c in (scene_text[:16] or "a"))
+            cycle = 2.8
+            speaker1_active = ((text_seed + int(t / cycle)) % 2 == 0)
+
+        # STRICT LIP SYNC ENFORCEMENT:
+        # The active speaker receives the full lip-sync audio energy.
+        # The listener receives exactly 0.0 (strictly closed mouth, no speech bubble).
+        if speaker1_active:
+            energy1 = lip_sync_energy
+            energy2 = 0.0
+        else:
+            energy1 = 0.0
+            energy2 = lip_sync_energy
+
+        # 1. Render Character 1 (Left position: cx ≈ 0.28 * width)
         buf1 = np.zeros_like(canvas)
         fn1(buf1, frame_idx, t, width, height, energy1)
         target_cx1 = int(width * 0.28)
@@ -1016,14 +1156,14 @@ class FootageManager:
         mask1 = np.any(shifted1 > 0, axis=-1)
         canvas[mask1] = shifted1[mask1]
 
-        # 2. Render Character 2 (Right side: cx ≈ 0.80 * width)
+        # 2. Render Character 2 (Right position: cx ≈ 0.80 * width)
         buf2 = np.zeros_like(canvas)
-        fn2(buf2, frame_idx, t + 0.4, width, height, energy2)
+        fn2(buf2, frame_idx, t + 0.35, width, height, energy2)
         mask2 = np.any(buf2 > 0, axis=-1)
         canvas[mask2] = buf2[mask2]
 
         # 3. Drama Scene Header Badge
-        bw = min(int(width * 0.58), 520)
+        bw = min(int(width * 0.58), 540)
         bx1 = (width - bw) // 2
         bx2 = bx1 + bw
         by = int(height * 0.08)
@@ -1037,23 +1177,23 @@ class FootageManager:
         spk_y = int(height * 0.22)
         target_cx2 = int(width * 0.80)
         if speaker1_active:
-            # Char 1 speaking (Emerald)
-            cv2.rectangle(canvas, (target_cx1 - 65, spk_y - 12), (target_cx1 + 65, spk_y + 12), (5, 150, 105), -1)
-            cv2.putText(canvas, "SPEAKING", (target_cx1 - 42, spk_y + 5),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
-            # Char 2 listening (Slate)
-            cv2.rectangle(canvas, (target_cx2 - 65, spk_y - 12), (target_cx2 + 65, spk_y + 12), (30, 41, 59), -1)
-            cv2.putText(canvas, "LISTENING", (target_cx2 - 42, spk_y + 5),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (148, 163, 184), 1, cv2.LINE_AA)
+            # Char 1 speaking (Emerald glow)
+            cv2.rectangle(canvas, (target_cx1 - 70, spk_y - 12), (target_cx1 + 70, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, f"{tag1.upper()}: SPEAKING", (target_cx1 - 58, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (255, 255, 255), 1, cv2.LINE_AA)
+            # Char 2 listening (Muted slate)
+            cv2.rectangle(canvas, (target_cx2 - 70, spk_y - 12), (target_cx2 + 70, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, f"{tag2.upper()}: LISTENING", (target_cx2 - 58, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.34, (148, 163, 184), 1, cv2.LINE_AA)
         else:
-            # Char 1 listening (Slate)
-            cv2.rectangle(canvas, (target_cx1 - 65, spk_y - 12), (target_cx1 + 65, spk_y + 12), (30, 41, 59), -1)
-            cv2.putText(canvas, "LISTENING", (target_cx1 - 42, spk_y + 5),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (148, 163, 184), 1, cv2.LINE_AA)
-            # Char 2 speaking (Emerald)
-            cv2.rectangle(canvas, (target_cx2 - 65, spk_y - 12), (target_cx2 + 65, spk_y + 12), (5, 150, 105), -1)
-            cv2.putText(canvas, "SPEAKING", (target_cx2 - 42, spk_y + 5),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
+            # Char 1 listening (Muted slate)
+            cv2.rectangle(canvas, (target_cx1 - 70, spk_y - 12), (target_cx1 + 70, spk_y + 12), (30, 41, 59), -1)
+            cv2.putText(canvas, f"{tag1.upper()}: LISTENING", (target_cx1 - 58, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.34, (148, 163, 184), 1, cv2.LINE_AA)
+            # Char 2 speaking (Emerald glow)
+            cv2.rectangle(canvas, (target_cx2 - 70, spk_y - 12), (target_cx2 + 70, spk_y + 12), (5, 150, 105), -1)
+            cv2.putText(canvas, f"{tag2.upper()}: SPEAKING", (target_cx2 - 58, spk_y + 5),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.36, (255, 255, 255), 1, cv2.LINE_AA)
 
     def _draw_animated_character(
         self,
@@ -1100,6 +1240,245 @@ class FootageManager:
         fn(canvas, frame_idx, t, width, height, lip_sync_energy)
 
     # ────────────── CUSTOM CHARACTER TYPE RENDERERS ──────────────────────────
+
+    def _char_doctor(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Doctor character — crisp white lab coat, cyan/blue medical stethoscope, doctor ID badge, pen."""
+        bob_y = int(math.sin(t * 3.0) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+
+        white_coat = (250, 250, 252)    # Pure white medical lab coat
+        lapel_gray = (220, 225, 230)
+        inner_shirt = (235, 210, 180)   # Light medical blue shirt
+        tie_blue = (140, 45, 25)        # Navy tie
+        steth_tube = (190, 120, 25)     # Cyan/blue stethoscope tubing
+        steth_bell = (215, 215, 225)    # Metallic silver chest piece
+        skin = (195, 215, 240)          # Realistic skin tone (BGR)
+        hair = (35, 45, 60)             # Professional dark brown hair
+
+        # Shadow beneath
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Body / Lab Coat Torso
+        cv2.ellipse(canvas, (cx, cy + 170), (115, 140), 0, 0, 360, white_coat, -1, cv2.LINE_AA)
+        cv2.polylines(canvas, [np.array([[cx - 75, cy + 80], [cx - 75, cy + 240], [cx + 75, cy + 240], [cx + 75, cy + 80]], np.int32)], False, lapel_gray, 2, cv2.LINE_AA)
+
+        # Inner shirt & tie (visible in coat V-neck)
+        shirt_pts = np.array([[cx - 28, cy + 45], [cx + 28, cy + 45], [cx + 12, cy + 115], [cx - 12, cy + 115]], np.int32)
+        cv2.fillPoly(canvas, [shirt_pts], inner_shirt, cv2.LINE_AA)
+        # Navy tie
+        tie_pts = np.array([[cx - 7, cy + 55], [cx + 7, cy + 55], [cx + 10, cy + 110], [cx, cy + 125], [cx - 10, cy + 110]], np.int32)
+        cv2.fillPoly(canvas, [tie_pts], tie_blue, cv2.LINE_AA)
+
+        # Coat lapels
+        cv2.line(canvas, (cx - 40, cy + 50), (cx - 14, cy + 130), lapel_gray, 3, cv2.LINE_AA)
+        cv2.line(canvas, (cx + 40, cy + 50), (cx + 14, cy + 130), lapel_gray, 3, cv2.LINE_AA)
+        cv2.line(canvas, (cx, cy + 130), (cx, cy + 240), lapel_gray, 2, cv2.LINE_AA)
+        # Coat buttons
+        for by_btn in [cy + 150, cy + 180, cy + 210]:
+            cv2.circle(canvas, (cx, by_btn), 4, (40, 40, 45), -1, cv2.LINE_AA)
+
+        # Left coat pocket with ID badge & pen
+        cv2.rectangle(canvas, (cx - 65, cy + 105), (cx - 30, cy + 135), (240, 240, 245), -1)
+        cv2.rectangle(canvas, (cx - 65, cy + 105), (cx - 30, cy + 135), lapel_gray, 1, cv2.LINE_AA)
+        # Red medical cross on badge
+        cv2.line(canvas, (cx - 48, cy + 112), (cx - 48, cy + 122), (40, 40, 220), 2, cv2.LINE_AA)
+        cv2.line(canvas, (cx - 53, cy + 117), (cx - 43, cy + 117), (40, 40, 220), 2, cv2.LINE_AA)
+        # Pen in pocket
+        cv2.line(canvas, (cx - 38, cy + 96), (cx - 38, cy + 112), (200, 40, 20), 3, cv2.LINE_AA)
+
+        # ── REALISTIC MEDICAL STETHOSCOPE ──
+        steth_l = [
+            (cx - 32, cy + 42), (cx - 45, cy + 65), (cx - 38, cy + 100),
+            (cx - 20, cy + 128), (cx + 10, cy + 135)
+        ]
+        steth_r = [
+            (cx + 32, cy + 42), (cx + 45, cy + 65), (cx + 38, cy + 100),
+            (cx + 25, cy + 125), (cx + 10, cy + 135)
+        ]
+        for i in range(len(steth_l) - 1):
+            cv2.line(canvas, steth_l[i], steth_l[i+1], steth_tube, 4, cv2.LINE_AA)
+        for i in range(len(steth_r) - 1):
+            cv2.line(canvas, steth_r[i], steth_r[i+1], steth_tube, 4, cv2.LINE_AA)
+        # Hanging tube down to chest piece
+        cv2.line(canvas, (cx + 10, cy + 135), (cx + 18, cy + 165), steth_tube, 4, cv2.LINE_AA)
+        # Metallic silver chest piece / bell
+        cv2.circle(canvas, (cx + 18, cy + 165), 14, steth_bell, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 18, cy + 165), 14, (140, 140, 150), 2, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 18, cy + 165), 7, (90, 90, 100), -1, cv2.LINE_AA)
+
+        # Gesturing Arm
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=white_coat, skin_color=skin)
+
+        # Neck
+        cv2.rectangle(canvas, (cx - 20, cy + 30), (cx + 20, cy + 50), skin, -1)
+
+        # Head
+        cv2.circle(canvas, (cx, cy), 64, skin, -1, cv2.LINE_AA)
+
+        # Hair
+        cv2.ellipse(canvas, (cx, cy - 35), (66, 38), 0, 180, 360, hair, -1, cv2.LINE_AA)
+        cv2.line(canvas, (cx - 58, cy - 10), (cx - 52, cy - 35), hair, 6, cv2.LINE_AA)
+        cv2.line(canvas, (cx + 58, cy - 10), (cx + 52, cy - 35), hair, 6, cv2.LINE_AA)
+
+        # Eyes, Mouth, and HUD
+        self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(90, 60, 30))
+        self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=(200, 150, 50))
+        self._draw_badge(canvas, cx, cy, "DR. ADDISON // PHYSICIAN", border_color=(60, 180, 120), text_color=(220, 255, 230))
+
+    def _char_patient(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Patient character — light medical gown, patient ID wristband, pulse oximeter clip."""
+        bob_y = int(math.sin(t * 2.8) * 4)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+
+        gown_blue  = (225, 195, 150)    # Light medical powder cyan gown (BGR)
+        gown_trim  = (190, 160, 115)
+        skin       = (190, 210, 238)
+        hair       = (45, 55, 70)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Torso in Patient Hospital Gown
+        cv2.ellipse(canvas, (cx, cy + 170), (112, 138), 0, 0, 360, gown_blue, -1, cv2.LINE_AA)
+
+        # Gown collar V-neck & tie detail
+        cv2.ellipse(canvas, (cx, cy + 52), (32, 18), 0, 0, 180, gown_trim, 3, cv2.LINE_AA)
+        cv2.line(canvas, (cx, cy + 62), (cx, cy + 120), gown_trim, 2, cv2.LINE_AA)
+        for py_pat in [cy + 100, cy + 150, cy + 200]:
+            for px_pat in [cx - 45, cx, cx + 45]:
+                cv2.circle(canvas, (px_pat, py_pat), 3, gown_trim, -1, cv2.LINE_AA)
+
+        # Left Arm with Hospital Wristband
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=gown_blue, skin_color=skin)
+
+        # White Hospital ID wristband on arm
+        htx = int(cx - 130 + math.cos(t * 3.5) * 16)
+        hty = int(cy + 35 + math.sin(t * 3.5) * 20)
+        cv2.rectangle(canvas, (htx - 8, hty - 6), (htx + 8, hty + 6), (245, 245, 250), -1)
+        cv2.line(canvas, (htx - 4, hty - 4), (htx - 4, hty + 4), (180, 60, 30), 1)
+
+        # Pulse oximeter clip on finger with glowing red LED
+        cv2.circle(canvas, (htx - 22, hty - 10), 4, (30, 30, 240), -1, cv2.LINE_AA)
+
+        # Neck
+        cv2.rectangle(canvas, (cx - 18, cy + 30), (cx + 18, cy + 50), skin, -1)
+
+        # Head
+        cv2.circle(canvas, (cx, cy), 62, skin, -1, cv2.LINE_AA)
+
+        # Hair
+        cv2.ellipse(canvas, (cx, cy - 32), (64, 34), 0, 180, 360, hair, -1, cv2.LINE_AA)
+
+        # Eyes, Mouth, and HUD
+        self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 50, 40))
+        self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=(240, 200, 120))
+        self._draw_badge(canvas, cx, cy, "PATIENT // IN RECOVERY", border_color=(220, 180, 80), text_color=(240, 240, 255))
+
+    def _char_king(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """King character — royal velvet robe with ermine fur trim, golden crown with jewels."""
+        bob_y = int(math.sin(t * 3.0) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+
+        crimson   = (35, 18, 145)    # Royal velvet crimson (BGR)
+        ermine    = (240, 245, 250)  # White ermine fur collar
+        gold      = (30, 185, 240)   # Imperial gold
+        skin      = (190, 210, 240)
+        hair      = (50, 60, 75)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Royal Robe Torso
+        cv2.ellipse(canvas, (cx, cy + 170), (120, 142), 0, 0, 360, crimson, -1, cv2.LINE_AA)
+
+        # Ermine fur collar & golden chain
+        cv2.ellipse(canvas, (cx, cy + 60), (70, 28), 0, 0, 180, ermine, -1, cv2.LINE_AA)
+        for fx in [cx - 40, cx - 18, cx + 18, cx + 40]:
+            cv2.line(canvas, (fx, cy + 62), (fx, cy + 72), (20, 20, 25), 2)
+        cv2.ellipse(canvas, (cx, cy + 78), (55, 20), 0, 0, 180, gold, 3, cv2.LINE_AA)
+        cv2.circle(canvas, (cx, cy + 98), 8, gold, -1, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=crimson, skin_color=skin)
+
+        # Neck
+        cv2.rectangle(canvas, (cx - 20, cy + 30), (cx + 20, cy + 50), skin, -1)
+
+        # Head
+        cv2.circle(canvas, (cx, cy), 64, skin, -1, cv2.LINE_AA)
+
+        # Beard & Hair
+        cv2.ellipse(canvas, (cx, cy + 28), (44, 28), 0, 0, 180, hair, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy - 35), (66, 38), 0, 180, 360, hair, -1, cv2.LINE_AA)
+
+        # ── GOLDEN CROWN WITH JEWELS ──
+        crown_y = cy - 65
+        crown_pts = np.array([
+            [cx - 48, crown_y], [cx - 40, crown_y - 32], [cx - 20, crown_y - 12],
+            [cx, crown_y - 38], [cx + 20, crown_y - 12], [cx + 40, crown_y - 32],
+            [cx + 48, crown_y]
+        ], np.int32)
+        cv2.fillPoly(canvas, [crown_pts], gold, cv2.LINE_AA)
+        cv2.polylines(canvas, [crown_pts], True, (20, 150, 200), 2, cv2.LINE_AA)
+        cv2.circle(canvas, (cx, crown_y - 18), 6, (40, 30, 220), -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx - 24, crown_y - 12), 4, (220, 80, 40), -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 24, crown_y - 12), 4, (220, 80, 40), -1, cv2.LINE_AA)
+
+        # Eyes, Mouth, and HUD
+        self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 60, 40))
+        self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=gold)
+        self._draw_badge(canvas, cx, cy, "HIS MAJESTY // THE SOVEREIGN", border_color=gold, text_color=(255, 240, 200))
+
+    def _char_advisor(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Royal advisor / scholar character — scholarly robe, spectacles, rolled parchment scroll."""
+        bob_y = int(math.sin(t * 3.2) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+
+        tunic     = (115, 65, 35)    # Navy/slate tunic (BGR)
+        tunic_trim= (50, 160, 210)
+        scroll    = (200, 230, 245)  # Parchment
+        skin      = (190, 210, 240)
+        gray_hair = (160, 165, 175)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Robe Torso
+        cv2.ellipse(canvas, (cx, cy + 170), (115, 138), 0, 0, 360, tunic, -1, cv2.LINE_AA)
+        cv2.line(canvas, (cx, cy + 60), (cx, cy + 240), tunic_trim, 3, cv2.LINE_AA)
+
+        # Gesturing arm holding parchment scroll
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=tunic, skin_color=skin)
+
+        # Parchment scroll in hand
+        htx = int(cx - 130 + math.cos(t * 3.5) * 16)
+        hty = int(cy + 35 + math.sin(t * 3.5) * 20)
+        cv2.rectangle(canvas, (htx - 14, hty - 24), (htx + 14, hty + 24), scroll, -1)
+        cv2.rectangle(canvas, (htx - 14, hty - 24), (htx + 14, hty + 24), (120, 150, 180), 1, cv2.LINE_AA)
+        cv2.line(canvas, (htx - 14, hty), (htx + 14, hty), (40, 40, 200), 3)  # Red ribbon seal
+
+        # Neck
+        cv2.rectangle(canvas, (cx - 18, cy + 30), (cx + 18, cy + 50), skin, -1)
+
+        # Head
+        cv2.circle(canvas, (cx, cy), 64, skin, -1, cv2.LINE_AA)
+
+        # Scholar Hair
+        cv2.ellipse(canvas, (cx, cy - 35), (66, 36), 0, 180, 360, gray_hair, -1, cv2.LINE_AA)
+
+        # Spectacles / Glasses
+        cv2.circle(canvas, (cx - 26, cy - 6), 14, (30, 160, 220), 2, cv2.LINE_AA)
+        cv2.circle(canvas, (cx + 26, cy - 6), 14, (30, 160, 220), 2, cv2.LINE_AA)
+        cv2.line(canvas, (cx - 12, cy - 6), (cx + 12, cy - 6), (30, 160, 220), 2, cv2.LINE_AA)
+
+        # Eyes, Mouth, and HUD
+        self._draw_eyes(canvas, cx, cy - 6, t, frame_idx, lip_sync_energy, pupil_color=(80, 60, 40))
+        self._draw_mouth(canvas, cx, cy + 22, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=tunic_trim)
+        self._draw_badge(canvas, cx, cy, "CHIEF ADVISOR // REALM COUNCIL", border_color=tunic_trim, text_color=(240, 240, 255))
 
     def _char_lion(self, canvas, frame_idx, t, width, height, lip_sync_energy):
         """Lion character — golden mane, amber eyes, roaring mouth with audio-sync."""

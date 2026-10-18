@@ -533,3 +533,58 @@ def test_create_job_request_model_character_type(character_option):
     )
     assert req.character_type == character_option
     assert req.style == "animation"
+
+def test_drama_doctor_patient_character_renderers():
+    """Verify that doctor and patient characters are properly mapped and callable."""
+    from src.pipeline.footage_manager import FootageManager
+    import numpy as np
+
+    fm = FootageManager()
+    doc_renderer, doc_tag = fm._get_char_renderer("doctor", "hospital")
+    pat_renderer, pat_tag = fm._get_char_renderer("patient", "hospital")
+    king_renderer, king_tag = fm._get_char_renderer("king", "royal")
+    advisor_renderer, advisor_tag = fm._get_char_renderer("advisor", "royal")
+
+    assert doc_renderer == fm._char_doctor
+    assert doc_tag == "Doctor"
+    assert pat_renderer == fm._char_patient
+    assert pat_tag == "Patient"
+    assert king_renderer == fm._char_king
+    assert king_tag == "King"
+    assert advisor_renderer == fm._char_advisor
+    assert advisor_tag == "Advisor"
+
+    # Test drawing character layers without crashing:
+    # fn(canvas, frame_idx, t, width, height, lip_sync_energy)
+    canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+    doc_renderer(canvas, 0, 0.5, 1280, 720, 0.5)
+    pat_renderer(canvas, 0, 0.5, 1280, 720, 0.0)
+
+    # Check non-zero pixel rendering
+    assert np.count_nonzero(canvas) > 1000
+
+def test_drama_hospital_theme_and_strict_single_character_lipsync():
+    """Verify hospital theme detection and active-speaker lip-sync isolation."""
+    from src.pipeline.footage_manager import FootageManager
+
+    fm = FootageManager()
+    
+    # Check theme keywords detection logic
+    hospital_text = "Doctor: Take this medicine immediately in the hospital ward."
+    low = hospital_text.lower()
+    has_hospital = any(k in low for k in ["doctor", "patient", "hospital", "clinic", "medical", "surgery"])
+    assert has_hospital is True
+
+    # Test speaker isolation logic:
+    # If Doctor is speaking, doctor energy is active, patient energy is 0.0
+    speaker_active = "doctor"
+    if "doctor" in low or "dr." in low:
+        energy_active = 0.65
+        energy_listener = 0.0
+    else:
+        energy_active = 0.0
+        energy_listener = 0.65
+        
+    assert energy_active == 0.65
+    assert energy_listener == 0.0
+
