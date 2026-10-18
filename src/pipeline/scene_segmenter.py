@@ -194,10 +194,16 @@ class SceneSegmenter:
         """Strips or alters keywords that violate avoid settings."""
         q_lower = query.lower()
         for term in avoid:
+            term = term.strip().lower()
+            if not term:
+                continue
             if "face" in term or "people" in term:
                 q_lower = q_lower.replace("face", "object").replace("portrait", "scenery").replace("people", "cinematic landscape")
             if "alcohol" in term:
                 q_lower = q_lower.replace("beer", "coffee").replace("wine", "tea").replace("alcohol", "beverage")
-        return q_lower
+            # Also directly remove the avoid term if still present
+            q_lower = re.sub(rf'\b{re.escape(term)}\b', '', q_lower)
+        # Clean double spaces
+        return re.sub(r'\s+', ' ', q_lower).strip()
 
 scene_segmenter = SceneSegmenter()

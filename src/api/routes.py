@@ -45,8 +45,12 @@ async def create_broll_job(
             detail={"code": "EMPTY_PAYLOAD", "message": "Request payload is required.", "retryable": False}
         )
 
-    # Validate that at least one narration input exists
-    if not body.script and not body.audio_url and not body.scenes:
+    # Validate that at least one narration input exists (check non-empty / non-whitespace)
+    has_script = bool(body.script and body.script.strip())
+    has_audio_url = bool(body.audio_url and body.audio_url.strip())
+    has_scenes = bool(body.scenes and len(body.scenes) > 0)
+
+    if not has_script and not has_audio_url and not has_scenes:
         return JSONResponse(
             status_code=400,
             content={
@@ -164,6 +168,20 @@ async def swap_clip_endpoint(job_id: str, body: SwapClipRequest):
     """
     Replaces a single scene's footage and performs a fast partial re-render.
     """
+    job_state = job_manager.get_job(job_id)
+    if not job_state:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": "JOB_NOT_FOUND",
+                    "message": f"No job exists with ID '{job_id}'.",
+                    "retryable": False,
+                    "details": {"job_id": job_id}
+                }
+            }
+        )
+
     try:
         updated_outputs = await job_manager.swap_clip(
             job_id=job_id,
