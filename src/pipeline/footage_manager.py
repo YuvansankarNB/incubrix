@@ -120,7 +120,8 @@ class FootageManager:
         style: str,
         audio_path: Optional[Path] = None,
         start_time: float = 0.0,
-        scene_text: str = ""
+        scene_text: str = "",
+        character_type: str = "human"
     ) -> FootageClip:
         """
         Synthesizes high-impact, content-driven animated B-roll clips:
@@ -793,7 +794,8 @@ class FootageManager:
                 height=height,
                 theme=theme_mode,
                 lip_sync_energy=lip_sync_energy,
-                scene_text=scene_text
+                scene_text=scene_text,
+                character_type=character_type
             )
 
             # Watermark-free clean footer timecode
@@ -925,10 +927,34 @@ class FootageManager:
         height: int,
         theme: str,
         lip_sync_energy: float,
-        scene_text: str = ""
+        scene_text: str = "",
+        character_type: str = "human"
     ):
-        """Routes to one of 11 unique character renderers based on theme."""
-        draw_fn = {
+        """
+        Routes to a character renderer.
+        Priority 1: character_type keyword (lion, robot, cat, dog, bird, astronaut, wizard, alien).
+        Priority 2: theme-based human professional (analyst, coach, hacker…).
+        """
+        # ── Custom character type overrides ──────────────────────────────────
+        ct = (character_type or "human").lower().strip()
+        custom_map = {
+            "lion":       self._char_lion,
+            "robot":      self._char_robot,
+            "cat":        self._char_cat,
+            "dog":        self._char_dog,
+            "bird":       self._char_bird,
+            "astronaut":  self._char_astronaut,
+            "wizard":     self._char_wizard,
+            "alien":      self._char_alien,
+        }
+        # Fuzzy match — if any key is a substring of the user's input
+        for key, fn in custom_map.items():
+            if key in ct:
+                fn(canvas, frame_idx, t, width, height, lip_sync_energy)
+                return
+
+        # ── Default: theme-based human professional ───────────────────────────
+        theme_map = {
             "warning":  self._char_analyst,
             "waste":    self._char_tired_worker,
             "calendar": self._char_coach,
@@ -940,8 +966,438 @@ class FootageManager:
             "tech":     self._char_engineer,
             "trust":    self._char_diplomat,
             "creative": self._char_artist,
-        }.get(theme, self._char_analyst)
-        draw_fn(canvas, frame_idx, t, width, height, lip_sync_energy)
+        }
+        theme_map.get(theme, self._char_analyst)(canvas, frame_idx, t, width, height, lip_sync_energy)
+
+    # ────────────── CUSTOM CHARACTER TYPE RENDERERS ──────────────────────────
+
+    def _char_lion(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Lion character — golden mane, amber eyes, roaring mouth with audio-sync."""
+        bob_y = int(math.sin(t * 3.2) * 7)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        gold  = (30, 160, 220)   # golden fur (BGR)
+        mane  = (10, 90, 170)    # dark amber mane
+        amber = (20, 130, 240)   # amber eyes
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Body / torso
+        cv2.ellipse(canvas, (cx, cy + 170), (115, 138), 0, 0, 360, gold, -1, cv2.LINE_AA)
+
+        # Arm pointing
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=mane, skin_color=gold)
+
+        # Neck
+        cv2.rectangle(canvas, (cx-22, cy+50), (cx+22, cy+90), gold, -1)
+
+        # ── Mane (big shaggy circle) ──
+        for mi in range(16):
+            angle = mi * 22.5
+            mx = int(cx + math.cos(math.radians(angle)) * 88)
+            my = int(cy + math.sin(math.radians(angle)) * 88)
+            cv2.circle(canvas, (mx, my), 32, mane, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx, cy), 76, mane, -1, cv2.LINE_AA)
+
+        # Head (round lion face)
+        cv2.circle(canvas, (cx, cy), 68, gold, -1, cv2.LINE_AA)
+
+        # Ears
+        for ex, ey in [(cx-52, cy-52), (cx+52, cy-52)]:
+            cv2.fillPoly(canvas, [np.array([[ex-16, ey+10],[ex, ey-22],[ex+16, ey+10]], np.int32)], mane, cv2.LINE_AA)
+            cv2.fillPoly(canvas, [np.array([[ex-9, ey+6],[ex, ey-12],[ex+9, ey+6]], np.int32)], (60, 80, 200), cv2.LINE_AA)
+
+        # Snout
+        cv2.ellipse(canvas, (cx, cy+20), (34, 24), 0, 0, 360, (160, 200, 230), -1, cv2.LINE_AA)
+        # Nose
+        cv2.fillPoly(canvas, [np.array([[cx-7, cy+10],[cx+7, cy+10],[cx, cy+18]], np.int32)], (40, 20, 140), cv2.LINE_AA)
+        # Whisker lines
+        for wx in [-1, 1]:
+            for wy in range(3):
+                cv2.line(canvas, (cx + wx*36, cy+14+wy*7), (cx + wx*68, cy+10+wy*7), (200, 200, 200), 1, cv2.LINE_AA)
+
+        # Mouth (audio-synced roar)
+        self._draw_mouth(canvas, cx, cy + 14, lip_sync_energy, oral_color=(20, 20, 100), tongue_color=(50, 80, 220))
+
+        # Eyes
+        self._draw_eyes(canvas, cx, cy - 12, t, frame_idx, lip_sync_energy, pupil_color=amber, brow_color=mane)
+
+        # Tail (visible left side)
+        for ti in range(20):
+            tx = int(cx - 90 - ti * 5 + math.sin(t * 3 + ti * 0.3) * 8)
+            ty = int(cy + 170 + ti * 8)
+            cv2.circle(canvas, (tx, ty), max(2, 10 - ti // 3), mane, -1, cv2.LINE_AA)
+
+        self._draw_equalizer_bubble(canvas, cx, cy - 12, t, lip_sync_energy, bubble_color=amber)
+        self._draw_badge(canvas, cx, cy, "LEON // LION HOST", border_color=amber)
+
+    def _char_robot(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Robot character — metallic chrome body, LED eyes, speaker-grill mouth."""
+        bob_y = int(math.sin(t * 4.0) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        metal   = (160, 160, 165)  # chrome (BGR)
+        dark    = (40, 40, 45)
+        neon_b  = (240, 200, 60)   # neon blue (BGR)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Torso — rectangular chassis
+        cv2.rectangle(canvas, (cx-70, cy+60), (cx+70, cy+210), dark, -1)
+        cv2.rectangle(canvas, (cx-70, cy+60), (cx+70, cy+210), metal, 3, cv2.LINE_AA)
+        # Chest panel LED grid
+        for ri in range(3):
+            for ci2 in range(4):
+                led_col = (0, int(200 * abs(math.sin(t * 6 + ri + ci2))), 80)
+                cv2.circle(canvas, (cx - 34 + ci2 * 23, cy + 100 + ri * 22), 6, led_col, -1, cv2.LINE_AA)
+
+        # Arms (rectangular)
+        for side in [-1, 1]:
+            ax = cx + side * 85
+            cv2.rectangle(canvas, (ax - 12, cy + 65), (ax + 12, cy + 170), metal, -1)
+            cv2.rectangle(canvas, (ax - 12, cy + 65), (ax + 12, cy + 170), dark, 2)
+        # Pointing hand
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=metal, skin_color=metal)
+
+        # Neck (cylinder)
+        cv2.rectangle(canvas, (cx - 18, cy + 42), (cx + 18, cy + 65), metal, -1)
+
+        # Head (square)
+        cv2.rectangle(canvas, (cx - 58, cy - 60), (cx + 58, cy + 42), dark, -1)
+        cv2.rectangle(canvas, (cx - 58, cy - 60), (cx + 58, cy + 42), metal, 3, cv2.LINE_AA)
+
+        # Antenna
+        cv2.line(canvas, (cx, cy - 60), (cx, cy - 88), metal, 4, cv2.LINE_AA)
+        glow_r = 8 + int(abs(math.sin(t * 5)) * 5)
+        cv2.circle(canvas, (cx, cy - 88), glow_r, neon_b, -1, cv2.LINE_AA)
+
+        # Eyes — big rectangular LEDs
+        for ex in [cx - 24, cx + 24]:
+            ey_col = (int(neon_b[0] * abs(math.sin(t * 3 + ex))), neon_b[1], neon_b[2])
+            cv2.rectangle(canvas, (ex - 14, cy - 28), (ex + 14, cy - 4), ey_col, -1)
+            cv2.rectangle(canvas, (ex - 14, cy - 28), (ex + 14, cy - 4), metal, 1)
+
+        # Speaker-grill mouth (audio sync bars)
+        mouth_y = cy + 18
+        for gi in range(7):
+            bar_h = int(4 + lip_sync_energy * 14 + math.sin(t * 15 + gi) * 3)
+            bar_col = neon_b if gi % 2 == 0 else metal
+            gx = cx - 30 + gi * 10
+            cv2.rectangle(canvas, (gx, mouth_y - bar_h), (gx + 7, mouth_y + bar_h), bar_col, -1)
+        cv2.rectangle(canvas, (cx - 33, mouth_y - 18), (cx + 35, mouth_y + 18), metal, 2)
+
+        self._draw_equalizer_bubble(canvas, cx, cy - 60, t, lip_sync_energy, bubble_color=neon_b, bg_color=dark)
+        self._draw_badge(canvas, cx, cy, "R-7 // ROBO HOST", border_color=neon_b, bg_color=dark, text_color=neon_b)
+
+    def _char_cat(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Cat character — orange tabby, whiskers, pointy ears, swishing tail."""
+        bob_y = int(math.sin(t * 4.5) * 6)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        fur   = (60, 130, 220)   # orange tabby (BGR)
+        stripe= (40, 90, 170)
+        green_eye = (60, 200, 80)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Body
+        cv2.ellipse(canvas, (cx, cy + 170), (112, 136), 0, 0, 360, fur, -1, cv2.LINE_AA)
+        # Tabby stripes on body
+        for si in range(4):
+            cv2.line(canvas, (cx - 55 + si * 28, cy + 100), (cx - 45 + si * 28, cy + 200), stripe, 5, cv2.LINE_AA)
+
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=fur, skin_color=fur)
+
+        # Neck
+        cv2.rectangle(canvas, (cx-18, cy+50), (cx+18, cy+90), fur, -1)
+
+        # Head
+        cv2.circle(canvas, (cx, cy), 62, fur, -1, cv2.LINE_AA)
+        # Tabby stripe on forehead
+        for si in range(3):
+            cv2.line(canvas, (cx - 15 + si * 15, cy - 55), (cx - 12 + si * 15, cy - 20), stripe, 3, cv2.LINE_AA)
+
+        # Pointy ears
+        for ex, ey in [(cx - 44, cy - 44), (cx + 44, cy - 44)]:
+            cv2.fillPoly(canvas, [np.array([[ex-18, ey+14],[ex, ey-30],[ex+18, ey+14]], np.int32)], fur, cv2.LINE_AA)
+            cv2.fillPoly(canvas, [np.array([[ex-10, ey+8],[ex, ey-18],[ex+10, ey+8]], np.int32)], (100, 80, 200), cv2.LINE_AA)
+
+        # Muzzle
+        cv2.ellipse(canvas, (cx, cy + 22), (28, 18), 0, 0, 360, (200, 200, 220), -1, cv2.LINE_AA)
+        # Nose (tiny triangle)
+        cv2.fillPoly(canvas, [np.array([[cx-5, cy+14],[cx+5, cy+14],[cx, cy+20]], np.int32)], (60, 40, 200), cv2.LINE_AA)
+        # Whiskers
+        for wx in [-1, 1]:
+            for wy in range(3):
+                cv2.line(canvas, (cx + wx*28, cy+16+wy*6), (cx + wx*62, cy+12+wy*6), (220, 220, 220), 1, cv2.LINE_AA)
+
+        self._draw_mouth(canvas, cx, cy + 16, lip_sync_energy, oral_color=(40, 20, 120), tongue_color=(80, 100, 220))
+        self._draw_eyes(canvas, cx, cy - 10, t, frame_idx, lip_sync_energy, pupil_color=green_eye, brow_color=stripe)
+
+        # Swishing tail
+        for ti in range(25):
+            angle = math.pi * 1.2 + ti * 0.12 + math.sin(t * 2.5) * 0.4
+            tx = int(cx - 80 + ti * math.cos(angle) * 7)
+            ty = int(cy + 190 + ti * math.sin(angle) * 5)
+            cv2.circle(canvas, (tx, ty), max(2, 11 - ti // 3), stripe, -1, cv2.LINE_AA)
+
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=green_eye)
+        self._draw_badge(canvas, cx, cy, "CLEO // CAT HOST", border_color=green_eye)
+
+    def _char_dog(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Dog character — golden retriever, floppy ears, wagging tail, big smile."""
+        bob_y = int(math.sin(t * 5.0) * 9)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        fur   = (50, 170, 230)  # golden retriever (BGR)
+        dark_fur = (30, 110, 170)
+        brown_eye = (20, 80, 140)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        cv2.ellipse(canvas, (cx, cy + 170), (113, 136), 0, 0, 360, fur, -1, cv2.LINE_AA)
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=fur, skin_color=fur)
+        cv2.rectangle(canvas, (cx-20, cy+50), (cx+20, cy+90), fur, -1)
+        cv2.circle(canvas, (cx, cy), 64, fur, -1, cv2.LINE_AA)
+
+        # Floppy ears
+        for side, ex in [(-1, cx - 54), (1, cx + 54)]:
+            ear_swing = int(math.sin(t * 4 + side) * 8)
+            cv2.ellipse(canvas, (ex + ear_swing, cy + 10), (26, 46), side * 15, 0, 360, dark_fur, -1, cv2.LINE_AA)
+
+        # Snout
+        cv2.ellipse(canvas, (cx, cy + 24), (36, 26), 0, 0, 360, dark_fur, -1, cv2.LINE_AA)
+        # Nose
+        cv2.ellipse(canvas, (cx, cy + 14), (14, 10), 0, 0, 360, (20, 20, 30), -1, cv2.LINE_AA)
+
+        self._draw_mouth(canvas, cx, cy + 18, lip_sync_energy, oral_color=(20, 20, 100), tongue_color=(80, 80, 230))
+        self._draw_eyes(canvas, cx, cy - 12, t, frame_idx, lip_sync_energy, pupil_color=brown_eye, brow_color=dark_fur)
+
+        # Wagging tail
+        wag = math.sin(t * 6) * 0.6
+        for ti in range(22):
+            angle = math.pi * 0.3 + wag + ti * 0.1
+            tx = int(cx - 90 + ti * math.cos(angle) * 6)
+            ty = int(cy + 180 + ti * math.sin(angle) * 5)
+            cv2.circle(canvas, (tx, ty), max(2, 10 - ti // 3), fur, -1, cv2.LINE_AA)
+
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=(50, 200, 240))
+        self._draw_badge(canvas, cx, cy, "BUDDY // DOG HOST", border_color=(50, 200, 240))
+
+    def _char_bird(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Bird character — tropical parrot, colourful feathers, beak mouth."""
+        bob_y = int(math.sin(t * 6.0) * 10)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        red    = (40, 40, 220)
+        yellow = (20, 210, 240)
+        green  = (40, 180, 60)
+        blue_w = (200, 80, 40)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Body
+        cv2.ellipse(canvas, (cx, cy + 160), (95, 120), 0, 0, 360, red, -1, cv2.LINE_AA)
+        # Wing (flapping)
+        wing_angle = int(math.sin(t * 5) * 20)
+        cv2.ellipse(canvas, (cx - 70, cy + 120), (55, 30), wing_angle, 0, 360, yellow, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx + 70, cy + 120), (55, 30), -wing_angle, 0, 360, green, -1, cv2.LINE_AA)
+
+        # Pointing claw/wing
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=red, skin_color=yellow)
+
+        # Neck
+        cv2.rectangle(canvas, (cx-16, cy+50), (cx+16, cy+90), red, -1)
+        # Head
+        cv2.circle(canvas, (cx, cy), 55, red, -1, cv2.LINE_AA)
+        # Colourful head feathers
+        for fi in range(7):
+            angle = -60 + fi * 20
+            fax = int(cx + math.cos(math.radians(angle)) * 52)
+            fay = int(cy - 30 + math.sin(math.radians(angle)) * -30)
+            f_col = [red, yellow, green, blue_w, yellow, green, red][fi]
+            cv2.ellipse(canvas, (fax, fay), (10, 22), angle, 0, 360, f_col, -1, cv2.LINE_AA)
+
+        # Eyes
+        self._draw_eyes(canvas, cx, cy - 8, t, frame_idx, lip_sync_energy, pupil_color=(20, 20, 30), brow_color=yellow)
+        # Beak (audio-synced)
+        beak_open = int(lip_sync_energy * 20)
+        cv2.fillPoly(canvas, [np.array([[cx-12, cy+14],[cx+12, cy+14],[cx+6, cy+26],[cx-6, cy+26]], np.int32)], yellow, cv2.LINE_AA)
+        cv2.fillPoly(canvas, [np.array([[cx-10, cy+20+beak_open],[cx+10, cy+20+beak_open],[cx+6, cy+32+beak_open],[cx-6, cy+32+beak_open]], np.int32)], (10, 150, 200), cv2.LINE_AA)
+
+        # Tail feathers
+        for ti in range(5):
+            angle = 200 + ti * 14
+            tx = int(cx + math.cos(math.radians(angle)) * (80 + ti * 10))
+            ty = int(cy + 200 + math.sin(math.radians(angle)) * 20)
+            f_col = [red, yellow, green, blue_w, yellow][ti]
+            cv2.line(canvas, (cx, cy + 200), (tx, ty), f_col, 6, cv2.LINE_AA)
+
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=yellow)
+        self._draw_badge(canvas, cx, cy, "POLLY // PARROT HOST", border_color=yellow)
+
+    def _char_astronaut(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Astronaut — white spacesuit, golden visor, NASA-style mission patch."""
+        bob_y = int(math.sin(t * 2.5) * 5)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        white  = (240, 240, 245)
+        gold   = (30, 190, 220)
+        patch  = (40, 40, 180)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Suit body (puffy)
+        cv2.ellipse(canvas, (cx, cy + 175), (125, 145), 0, 0, 360, white, -1, cv2.LINE_AA)
+        cv2.ellipse(canvas, (cx, cy + 175), (125, 145), 0, 0, 360, (180, 180, 190), 3, cv2.LINE_AA)
+        # Mission patch
+        cv2.circle(canvas, (cx - 55, cy + 105), 22, patch, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx - 55, cy + 105), 22, gold, 2, cv2.LINE_AA)
+        cv2.putText(canvas, "ISS", (cx - 68, cy + 110), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (255, 255, 255), 1, cv2.LINE_AA)
+
+        # Glove arms
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=white, skin_color=(200, 200, 215))
+
+        # Neck ring
+        cv2.ellipse(canvas, (cx, cy + 55), (38, 16), 0, 0, 360, (160, 160, 170), -1, cv2.LINE_AA)
+
+        # Helmet (large sphere)
+        cv2.circle(canvas, (cx, cy - 8), 78, white, -1, cv2.LINE_AA)
+        cv2.circle(canvas, (cx, cy - 8), 78, (180, 180, 190), 3, cv2.LINE_AA)
+
+        # Gold visor
+        cv2.ellipse(canvas, (cx, cy - 8), (58, 44), 0, 0, 360, gold, -1, cv2.LINE_AA)
+        # Visor reflection
+        cv2.ellipse(canvas, (cx - 18, cy - 22), (16, 26), -20, 0, 360, (255, 230, 120), -1, cv2.LINE_AA)
+
+        # Inside visor — face silhouette
+        skin_col = (170, 195, 215)
+        cv2.circle(canvas, (cx, cy - 8), 42, skin_col, -1, cv2.LINE_AA)
+        self._draw_eyes(canvas, cx, cy - 16, t, frame_idx, lip_sync_energy, pupil_color=(60, 80, 40), brow_color=(40, 40, 50))
+        self._draw_mouth(canvas, cx, cy - 8, lip_sync_energy)
+
+        # Communication antenna
+        cv2.line(canvas, (cx + 65, cy - 58), (cx + 65, cy - 100), (160, 160, 170), 4, cv2.LINE_AA)
+        blink = (0, 200, 80) if (frame_idx % 30) < 15 else (0, 80, 30)
+        cv2.circle(canvas, (cx + 65, cy - 100), 6, blink, -1, cv2.LINE_AA)
+
+        self._draw_equalizer_bubble(canvas, cx, cy - 8, t, lip_sync_energy, bubble_color=gold)
+        self._draw_badge(canvas, cx, cy, "NOVA // ASTRO HOST", border_color=gold)
+
+    def _char_wizard(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Wizard — purple starry robe, tall pointy hat, glowing staff, spell sparks."""
+        bob_y = int(math.sin(t * 2.8) * 6)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        robe   = (140, 40, 90)   # purple (BGR)
+        star   = (20, 210, 240)  # gold stars
+        skin   = (175, 200, 225)
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Robe body
+        cv2.fillPoly(canvas, [np.array([
+            [cx - 110, cy + 230], [cx + 110, cy + 230],
+            [cx + 65, cy + 55], [cx - 65, cy + 55]
+        ], np.int32)], robe, cv2.LINE_AA)
+        # Stars on robe
+        for si in range(10):
+            sx = cx - 80 + (si * 21 % 160)
+            sy = cy + 80 + (si * 17 % 130)
+            cv2.circle(canvas, (sx, sy), 5, star, -1, cv2.LINE_AA)
+
+        # Staff / wand (right side)
+        wand_x = cx + 90
+        cv2.line(canvas, (wand_x, cy - 40), (wand_x, cy + 200), (120, 80, 50), 7, cv2.LINE_AA)
+        glow = int(abs(math.sin(t * 4)) * 80 + 40)
+        cv2.circle(canvas, (wand_x, cy - 40), 18, star, -1, cv2.LINE_AA)
+        # Spark particles
+        for sp in range(8):
+            angle = sp * 45 + t * 120
+            spx = int(wand_x + math.cos(math.radians(angle)) * (16 + glow * 0.2))
+            spy = int(cy - 40 + math.sin(math.radians(angle)) * (16 + glow * 0.2))
+            cv2.circle(canvas, (spx, spy), 3, (0, 240, 255), -1, cv2.LINE_AA)
+
+        # Gesture arm
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=robe, skin_color=skin)
+
+        # Neck
+        cv2.rectangle(canvas, (cx-18, cy+50), (cx+18, cy+90), skin, -1)
+        # Head
+        cv2.ellipse(canvas, (cx, cy), (60, 76), 0, 0, 360, skin, -1, cv2.LINE_AA)
+
+        # Long white beard
+        cv2.fillPoly(canvas, [np.array([
+            [cx-28, cy+36], [cx+28, cy+36],
+            [cx+14, cy+130], [cx, cy+140], [cx-14, cy+130]
+        ], np.int32)], (230, 230, 235), cv2.LINE_AA)
+
+        # Tall pointy hat
+        cv2.fillPoly(canvas, [np.array([[cx-56, cy-46],[cx+56, cy-46],[cx, cy-120]], np.int32)], robe, cv2.LINE_AA)
+        # Hat brim
+        cv2.ellipse(canvas, (cx, cy - 46), (66, 16), 0, 0, 360, (100, 25, 65), -1, cv2.LINE_AA)
+        # Star on hat
+        cv2.circle(canvas, (cx + 20, cy - 80), 8, star, -1, cv2.LINE_AA)
+
+        self._draw_eyes(canvas, cx, cy - 8, t, frame_idx, lip_sync_energy, pupil_color=(150, 40, 120), brow_color=(200, 200, 210))
+        self._draw_mouth(canvas, cx, cy, lip_sync_energy)
+        self._draw_equalizer_bubble(canvas, cx, cy, t, lip_sync_energy, bubble_color=star)
+        self._draw_badge(canvas, cx, cy, "MERLIN // WIZARD HOST", border_color=star)
+
+    def _char_alien(self, canvas, frame_idx, t, width, height, lip_sync_energy):
+        """Alien — green skin, huge black eyes, antenna, glowing aura."""
+        bob_y = int(math.sin(t * 3.5) * 8)
+        cx = int(width * 0.80)
+        cy = int(height * 0.68) + bob_y
+        green  = (60, 180, 80)   # alien green (BGR)
+        dark_g = (30, 120, 40)
+        glow_c = (240, 240, 60)  # yellow glow
+
+        cv2.ellipse(canvas, (cx, int(height * 0.94)), (120, 26), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+
+        # Glow aura
+        for gi in range(4):
+            r = 130 + gi * 18
+            alpha_col = max(0, 40 - gi * 10)
+            cv2.circle(canvas, (cx, cy), r, (0, alpha_col, 0), 1, cv2.LINE_AA)
+
+        # Body (slim)
+        cv2.ellipse(canvas, (cx, cy + 175), (88, 130), 0, 0, 360, green, -1, cv2.LINE_AA)
+        # Silver suit detail
+        cv2.ellipse(canvas, (cx, cy + 175), (88, 130), 0, 0, 360, (180, 180, 190), 2, cv2.LINE_AA)
+        # Chest symbol
+        cv2.circle(canvas, (cx, cy + 115), 18, glow_c, -1, cv2.LINE_AA)
+        glow_r2 = int(abs(math.sin(t * 3)) * 8 + 10)
+        cv2.circle(canvas, (cx, cy + 115), glow_r2, (0, 60, 0), -1, cv2.LINE_AA)
+
+        # Long thin arms
+        self._draw_pointing_arm(canvas, cx, cy, t, arm_color=green, skin_color=green)
+
+        # Thin neck
+        cv2.rectangle(canvas, (cx-12, cy+50), (cx+12, cy+90), green, -1)
+
+        # Head — large elongated oval
+        cv2.ellipse(canvas, (cx, cy - 10), (55, 80), 0, 0, 360, green, -1, cv2.LINE_AA)
+
+        # Double antenna
+        for ax_off, ay_off in [(-24, -60), (24, -60)]:
+            cv2.line(canvas, (cx + ax_off, cy - 60), (cx + ax_off + int(math.sin(t * 3) * 5), cy - 100), dark_g, 3, cv2.LINE_AA)
+            cv2.circle(canvas, (cx + ax_off + int(math.sin(t * 3) * 5), cy - 100), 7, glow_c, -1, cv2.LINE_AA)
+
+        # Huge black almond eyes
+        for ex in [cx - 22, cx + 22]:
+            cv2.ellipse(canvas, (ex, cy - 16), (20, 14), 0, 0, 360, (10, 10, 10), -1, cv2.LINE_AA)
+            # Alien pupil glow
+            pupil_c = glow_c if lip_sync_energy > 0.05 else (0, 150, 30)
+            cv2.circle(canvas, (ex, cy - 16), 5, pupil_c, -1, cv2.LINE_AA)
+
+        # Slit mouth (audio sync)
+        self._draw_mouth(canvas, cx, cy + 32, lip_sync_energy, oral_color=(20, 80, 20), tongue_color=(40, 160, 40))
+
+        self._draw_equalizer_bubble(canvas, cx, cy - 10, t, lip_sync_energy, bubble_color=glow_c, bg_color=(10, 30, 10))
+        self._draw_badge(canvas, cx, cy, "ZRIX // ALIEN HOST", border_color=glow_c, bg_color=(10, 30, 10), text_color=glow_c)
+
+
 
     # ───────────────── 11 UNIQUE CHARACTER RENDERERS ─────────────────────────
 
@@ -1550,7 +2006,8 @@ class FootageManager:
         preferred_source: Optional[str] = None,
         audio_path: Optional[Path] = None,
         start_time: float = 0.0,
-        scene_text: str = ""
+        scene_text: str = "",
+        character_type: str = "human"
     ) -> FootageClip:
         """
         Dual-source selector implementing the Advanced Level Requirement:
@@ -1569,8 +2026,8 @@ class FootageManager:
                 return clip
 
         # Fallback / Dual source: Generative Kinetic Motion Engine with Lip Sync
-        # Unique cache key per scene query and scene text to ensure full content reactivity
-        unique_seed = f"{scene_index}_{search_query}_{scene_text}"
+        # Unique cache key includes character_type so different characters render separately
+        unique_seed = f"{scene_index}_{search_query}_{scene_text}_{character_type}"
         gen_path = self.cache_dir / f"scene_{scene_index}_{hashlib.md5(unique_seed.encode()).hexdigest()[:8]}.mp4"
         clip = self.generate_procedural_broll(
             query=search_query,
@@ -1579,7 +2036,8 @@ class FootageManager:
             style=style,
             audio_path=audio_path,
             start_time=start_time,
-            scene_text=scene_text
+            scene_text=scene_text,
+            character_type=character_type
         )
         self.used_clip_ids.add(clip.clip_id)
         return clip

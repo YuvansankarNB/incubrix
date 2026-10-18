@@ -18,6 +18,7 @@ class CreateJobRequest(BaseModel):
     style: Optional[str] = Field(default="bright, modern, real-world footage", description="Visual aesthetic guidance")
     avoid: Optional[List[str]] = Field(default_factory=list, description="List of themes or objects to avoid")
     captions: Optional[CaptionSettings] = Field(default_factory=CaptionSettings)
+    character_type: Optional[str] = Field(default="human", description="Character type to render in videos: human, lion, robot, cat, dog, bird, astronaut, wizard, alien, etc.")
     callback_url: Optional[str] = Field(default=None, description="Webhook URL for async notifications")
 
 class SwapClipRequest(BaseModel):

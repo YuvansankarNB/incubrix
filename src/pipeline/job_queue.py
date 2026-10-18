@@ -179,7 +179,8 @@ class JobManager:
                 style=req.get("style", "bright, modern"),
                 audio_path=audio_file,
                 start_time=scene["start_time"],
-                scene_text=scene["narration"]
+                scene_text=scene["narration"],
+                character_type=req.get("character_type", "human")
             )
             raw_clip_paths.append(clip.local_path)
             

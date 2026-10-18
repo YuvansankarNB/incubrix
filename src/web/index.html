@@ -248,7 +248,31 @@
             </button>
           </div>
         </div>
+
+        <!-- ── Character Box ── -->
+        <div class="character-box-section">
+          <label class="character-box-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:5px"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+            Character in Video
+          </label>
+          <p class="field-hint" style="margin-bottom:10px">Pick a character type — they appear as an animated host in every scene with audio lip-sync.</p>
+          <div class="char-chips" id="char-chips">
+            <button type="button" class="char-chip active" data-char="human">&#x1F9D1; Human</button>
+            <button type="button" class="char-chip" data-char="lion">&#x1F981; Lion</button>
+            <button type="button" class="char-chip" data-char="robot">&#x1F916; Robot</button>
+            <button type="button" class="char-chip" data-char="cat">&#x1F431; Cat</button>
+            <button type="button" class="char-chip" data-char="dog">&#x1F436; Dog</button>
+            <button type="button" class="char-chip" data-char="bird">&#x1F99C; Bird</button>
+            <button type="button" class="char-chip" data-char="astronaut">&#x1F9D1;&#x200D;&#x1F680; Astronaut</button>
+            <button type="button" class="char-chip" data-char="wizard">&#x1F9D9; Wizard</button>
+            <button type="button" class="char-chip" data-char="alien">&#x1F47D; Alien</button>
+          </div>
+          <div class="char-custom-row">
+            <input type="text" id="character-type-input" placeholder="Or type your own: dragon, dinosaur, knight, fox…" maxlength="40">
+          </div>
+        </div>
       </section>
+
 
       <!-- STEP 3: Full-Width Video Output, Timeline & Provenance -->
       <section class="card full-width-card output-card">

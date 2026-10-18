@@ -15,7 +15,35 @@ document.addEventListener('DOMContentLoaded', () => {
   initModal();
   initInspectTabs();
   initFileUploadUI();
+  initCharacterBox();
 });
+
+// Character Box — chip selection + custom input
+function initCharacterBox() {
+  const chips = document.querySelectorAll('#char-chips .char-chip');
+  const customInput = document.getElementById('character-type-input');
+  if (!chips.length || !customInput) return;
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      customInput.value = ''; // clear custom when chip chosen
+    });
+  });
+
+  // If user starts typing custom, deselect chips
+  customInput.addEventListener('input', () => {
+    if (customInput.value.trim()) {
+      chips.forEach(c => c.classList.remove('active'));
+    } else {
+      // Re-select Human if input cleared
+      const humanChip = document.querySelector('#char-chips .char-chip[data-char="human"]');
+      if (humanChip) humanChip.classList.add('active');
+    }
+  });
+}
+
 
 // 1. Tab Navigation
 function initTabs() {
@@ -114,6 +142,11 @@ function initFormSubmit() {
     const avoid = avoidRaw.split(',').map(s => s.trim()).filter(Boolean);
     const burnIn = document.getElementById('burn-in-captions').checked;
 
+    // Read character type — custom text input overrides chip selection
+    const charCustom = (document.getElementById('character-type-input').value || '').trim();
+    const activeChip = document.querySelector('#char-chips .char-chip.active');
+    const characterType = charCustom || (activeChip ? activeChip.dataset.char : 'human');
+
     // Generate unique idempotency key
     const idempotencyKey = "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
     setLoadingState(true);
@@ -129,6 +162,7 @@ function initFormSubmit() {
         formData.append('style', style);
         formData.append('avoid', avoid.join(','));
         formData.append('burn_in_captions', burnIn);
+        formData.append('character_type', characterType);
 
         resp = await fetch('/api/v1/broll/jobs/upload', {
           method: 'POST',
@@ -141,7 +175,8 @@ function initFormSubmit() {
           aspect_ratios: aspectRatios,
           style: style,
           avoid: avoid,
-          captions: { burn_in: burnIn, srt: true }
+          captions: { burn_in: burnIn, srt: true },
+          character_type: characterType
         };
 
         if (activeTab === 'tab-script') {

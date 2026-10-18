@@ -144,8 +144,8 @@ class VideoRenderer:
 
         if burn_in_captions and srt_path and srt_path.exists():
             srt_str = str(srt_path.resolve()).replace("\\", "/").replace(":", "\\:")
-            # High-visibility burned-in styling: font size 20, white text, semi-transparent black outline box
-            subtitle_filter = f"subtitles='{srt_str}':force_style='FontSize=22,PrimaryColour=&H00FFFFFF,BorderStyle=3,Outline=2,Shadow=1,MarginV=35'"
+            # Small burned-in captions at the bottom — FontSize=13 keeps them out of the content area
+            subtitle_filter = f"subtitles='{srt_str}':force_style='FontSize=13,PrimaryColour=&H00FFFFFF,BackColour=&H80000000,BorderStyle=4,Outline=1,Shadow=0,MarginV=18,Alignment=2'"
             cmd_final.extend(["-vf", subtitle_filter, "-c:v", "libx264", "-preset", "veryfast", "-crf", "22"])
         else:
             cmd_final.extend(["-c:v", "copy"])
