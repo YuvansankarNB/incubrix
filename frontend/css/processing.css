@@ -1,0 +1,110 @@
+/* IncuBrix — Job Processing Page Stylesheet */
+.processing-card {
+  max-width: 800px;
+  margin: 40px auto;
+  text-align: center;
+  padding: 40px;
+}
+
+.processing-header {
+  margin-bottom: 28px;
+}
+
+.job-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.progress-headline {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.progress-track-lg {
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 24px 0 16px;
+}
+
+.progress-fill-lg {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* 11-Stage Pipeline Steps List */
+.stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  margin: 32px 0;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+}
+
+.stage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.stage-item.completed {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.stage-item.active {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.stage-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  background: #ffffff;
+}
+
+.stage-item.completed .stage-indicator {
+  background: var(--success);
+  border-color: var(--success);
+  color: #ffffff;
+}
+
+.stage-item.active .stage-indicator {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.processing-metrics-row {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}

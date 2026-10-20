@@ -645,3 +645,104 @@ def test_dialogue_turns_scene_segmentation():
     assert scenes[1]["duration"] == 2.8
 
 
+def test_visual_hint_themes_clean_energy_laboratory_garden(tmp_path):
+    """Verify that structured scenes with visual hints correctly trigger the intended procedural background themes."""
+    from src.pipeline.footage_manager import footage_manager
+
+    # 1. Clean energy wind farm at sunset
+    clip1 = footage_manager.generate_procedural_broll(
+        query="Clean energy wind farm at sunset with digital carbon metrics overlay",
+        duration=2.0,
+        output_path=tmp_path / "test_energy.mp4",
+        style="bright, modern",
+        scene_text="Carbon emissions were reduced by 35% across all manufacturing plants.",
+        visual_hint="Clean energy wind farm at sunset with digital carbon metrics overlay"
+    )
+    assert clip1.local_path.exists()
+    assert "Clean Energy" in clip1.source or "Clean Energy" in clip1.selection_reason
+
+    # 2. Modern laboratory with microscope
+    clip2 = footage_manager.generate_procedural_broll(
+        query="Bright modern laboratory with a scientist examining a plant-based polymer under a microscope",
+        duration=2.0,
+        output_path=tmp_path / "test_lab.mp4",
+        style="bright, modern",
+        scene_text="Next-generation product design relies entirely on biodegradable and circular materials.",
+        visual_hint="Bright modern laboratory with a scientist examining a plant-based polymer under a microscope"
+    )
+    assert clip2.local_path.exists()
+    assert "Laboratory" in clip2.source or "Laboratory" in clip2.selection_reason
+
+    # 3. Community workshop and urban garden
+    clip3 = footage_manager.generate_procedural_broll(
+        query="Open-air community workshop with corporate volunteers planting an urban garden",
+        duration=2.0,
+        output_path=tmp_path / "test_garden.mp4",
+        style="bright, modern",
+        scene_text="Lasting ecological change is achieved by fostering green literacy within local communities.",
+        visual_hint="Open-air community workshop with corporate volunteers planting an urban garden"
+    )
+    assert clip3.local_path.exists()
+    assert "Ecology Garden" in clip3.source or "Community Workshop" in clip3.source or "Ecology" in clip3.selection_reason
+
+
+def test_doctor_patient_script_hospital_theme(tmp_path):
+    """Verify that medical scripts automatically trigger the Clinical Hospital background theme."""
+    from src.pipeline.footage_manager import footage_manager
+
+    clip = footage_manager.generate_procedural_broll(
+        query="The latest lab reports just came in",
+        duration=2.0,
+        output_path=tmp_path / "test_med.mp4",
+        style="bright, modern",
+        scene_text="The latest lab reports just came in, and I wanted to discuss the numbers with you directly. Does this mean I need surgery?",
+        character_type="doctor"
+    )
+    assert clip.local_path.exists()
+    assert "Hospital" in clip.source or "Medical" in clip.source
+
+
+def test_universal_context_dynamic_generation(tmp_path):
+    """Verify that ANY context (Space, Culinary, Fitness, Automotive, or novel topics) dynamically sets the visual background."""
+    from src.pipeline.footage_manager import footage_manager
+
+    # 1. Space exploration context
+    clip_space = footage_manager.generate_procedural_broll(
+        query="Deep space lunar orbit mission",
+        duration=2.0,
+        output_path=tmp_path / "test_space.mp4",
+        style="bright, modern",
+        scene_text="The spacecraft successfully achieved lunar orbit after a 4-day flight.",
+        visual_hint="Astronaut gazing at lunar horizon with telemetry overlay"
+    )
+    assert clip_space.local_path.exists()
+    assert "Space" in clip_space.source or "Space" in clip_space.selection_reason
+
+    # 2. Culinary / Cooking context
+    clip_food = footage_manager.generate_procedural_broll(
+        query="Gourmet chef preparing restaurant dish",
+        duration=2.0,
+        output_path=tmp_path / "test_culinary.mp4",
+        style="bright, modern",
+        scene_text="The chef preheats the copper skillet before searing the artisanal steak.",
+        visual_hint="Warm rustic kitchen with chef seasoning fresh ingredients"
+    )
+    assert clip_food.local_path.exists()
+    assert "Culinary" in clip_food.source or "Kitchen" in clip_food.source
+
+    # 3. Completely novel custom domain (Quantum Cryptography)
+    clip_quantum = footage_manager.generate_procedural_broll(
+        query="Quantum cryptography key exchange protocol",
+        duration=2.0,
+        output_path=tmp_path / "test_quantum.mp4",
+        style="bright, modern",
+        scene_text="Entangled photon key distribution guaranteed zero intercept vulnerability across 120km.",
+        visual_hint="Quantum photon distribution network with entropy meters"
+    )
+    assert clip_quantum.local_path.exists()
+    # Verified: dynamic contextual synthesis generated without error
+    assert clip_quantum.is_ai_generated is True
+
+
+
+

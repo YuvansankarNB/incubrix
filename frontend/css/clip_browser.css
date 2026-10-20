@@ -1,0 +1,314 @@
+/**
+ * IncuBrix Clip Browser Panel — Vanilla CSS
+ * Per-scene clip search, preview, and replacement UI.
+ */
+
+/* ── Panel container ───────────────────────────────────────── */
+.clip-browser-section {
+  margin-bottom: 24px;
+}
+
+.clip-browser-section .card-title {
+  margin-bottom: 4px;
+}
+
+/* ── Scene clip row ─────────────────────────────────────────── */
+.scene-clip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.scene-clip-row:last-child {
+  border-bottom: none;
+}
+
+/* Current clip thumbnail */
+.scene-current-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+}
+.scene-current-thumb img {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #1e293b;
+  display: block;
+}
+.thumb-source-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.scene-clip-info {
+  flex: 1;
+  min-width: 0;
+}
+.scene-clip-info .scene-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary, #6366f1);
+  margin-bottom: 4px;
+}
+.scene-clip-info .scene-narration-snippet {
+  font-size: 0.88rem;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scene-clip-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── "Search More Clips" inline panel ──────────────────────── */
+.clip-search-panel {
+  display: none;
+  margin-top: 12px;
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  padding: 16px;
+}
+.clip-search-panel.open {
+  display: block;
+}
+
+.clip-search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.clip-search-bar input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--text-main, #0f172a);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.clip-search-bar input[type="text"]:focus {
+  border-color: var(--primary, #6366f1);
+}
+.clip-search-bar .btn {
+  white-space: nowrap;
+}
+
+/* Filter chips row */
+.clip-filter-chips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 4px 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  color: var(--text-muted, #64748b);
+  transition: all 0.15s;
+  user-select: none;
+}
+.filter-chip.active {
+  background: var(--primary, #6366f1);
+  border-color: var(--primary, #6366f1);
+  color: #fff;
+}
+.filter-chip:hover:not(.active) {
+  border-color: var(--primary, #6366f1);
+  color: var(--primary, #6366f1);
+}
+
+/* Results grid */
+.clip-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+/* Empty / loading / error states */
+.clip-state-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted, #64748b);
+  font-size: 0.9rem;
+}
+.clip-state-message svg {
+  display: block;
+  margin: 0 auto 10px;
+  opacity: 0.4;
+}
+.clip-loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border, #e2e8f0);
+  border-top-color: var(--primary, #6366f1);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Individual clip card */
+.clip-card {
+  position: relative;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1e293b;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.clip-card:hover {
+  border-color: var(--primary, #6366f1);
+  transform: translateY(-2px);
+}
+.clip-card.selected {
+  border-color: #22c55e;
+}
+
+.clip-card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  overflow: hidden;
+}
+.clip-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.2s;
+}
+.clip-card:hover .clip-card-thumb img {
+  opacity: 0.85;
+}
+
+/* Duration badge */
+.clip-duration-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* EC badge */
+.clip-ec-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Source badge (Pixabay / Mock) */
+.clip-source-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(99,102,241,0.9);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.clip-source-badge.mock {
+  background: rgba(100,116,139,0.85);
+}
+
+.clip-card-meta {
+  padding: 6px 8px 8px;
+}
+.clip-card-tags {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+.clip-card-stats {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.clip-card-actions {
+  display: flex;
+  gap: 4px;
+}
+.clip-card-actions .btn {
+  flex: 1;
+  font-size: 0.72rem;
+  padding: 4px 6px;
+}
+
+/* Apply banner at bottom of search panel */
+.clip-apply-bar {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.clip-apply-bar.hidden {
+  display: none;
+}
+.clip-apply-bar .apply-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #166534;
+}

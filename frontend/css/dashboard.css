@@ -1,0 +1,117 @@
+/* IncuBrix — Dashboard Stylesheet */
+.welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.welcome-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+}
+
+.welcome-subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* Stats Metric Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon-primary { background: var(--primary-light); color: var(--primary); }
+.stat-icon-success { background: var(--success-bg); color: var(--success); }
+.stat-icon-warning { background: var(--warning-bg); color: var(--warning); }
+.stat-icon-danger { background: var(--danger-bg); color: var(--danger); }
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Projects Table Card */
+.projects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.project-thumb {
+  width: 54px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: #e2e8f0;
+  border: 1px solid var(--border-color);
+}
+
+.project-name-cell {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.project-id-sub {
+  font-size: 0.76rem;
+  color: var(--text-light);
+  font-family: monospace;
+}
+
+.aspect-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #f1f5f9;
+  color: var(--text-muted);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-right: 4px;
+}

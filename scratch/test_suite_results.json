@@ -1,0 +1,121 @@
+[
+  {
+    "id": "test_a_environmental",
+    "name": "Test A: Environmental & Sustainable Agriculture",
+    "status": "succeeded",
+    "duration_seconds": 94.53,
+    "video_path": "data\\storage\\outputs\\job_test_a_environmental_1792421258\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 331,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_a_environmental_frame_66.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_a_environmental_frame_165.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_a_environmental_frame_264.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 2,
+    "has_research_report": true
+  },
+  {
+    "id": "test_b_dialogue",
+    "name": "Test B: Doctor-Patient Consultation Dialogue",
+    "status": "succeeded",
+    "duration_seconds": 151.87,
+    "video_path": "data\\storage\\outputs\\job_test_b_dialogue_1792421354\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 330,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_b_dialogue_frame_66.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_b_dialogue_frame_165.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_b_dialogue_frame_264.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 1,
+    "has_research_report": true
+  },
+  {
+    "id": "test_c_education",
+    "name": "Test C: Educational Classroom / Physics Lesson",
+    "status": "succeeded",
+    "duration_seconds": 106.74,
+    "video_path": "data\\storage\\outputs\\job_test_c_education_1792421508\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 380,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_c_education_frame_76.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_c_education_frame_190.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_c_education_frame_304.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 1,
+    "has_research_report": true
+  },
+  {
+    "id": "test_d_technology",
+    "name": "Test D: Technology & AI Presentation",
+    "status": "succeeded",
+    "duration_seconds": 91.3,
+    "video_path": "data\\storage\\outputs\\job_test_d_technology_1792421615\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 367,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_d_technology_frame_73.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_d_technology_frame_183.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_d_technology_frame_293.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 1,
+    "has_research_report": true
+  },
+  {
+    "id": "test_e_researched_facts",
+    "name": "Test E: Researched Factual Video with Citations",
+    "status": "succeeded",
+    "duration_seconds": 453.35,
+    "video_path": "data\\storage\\outputs\\job_test_e_researched_facts_1792421707\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 360,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_e_researched_facts_frame_72.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_e_researched_facts_frame_180.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_e_researched_facts_frame_288.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 1,
+    "has_research_report": true
+  },
+  {
+    "id": "test_f_voiceover_closed_mouth",
+    "name": "Test F: Voice-Over Narration (Closed Mouth / Silent)",
+    "status": "succeeded",
+    "duration_seconds": 61.5,
+    "video_path": "data\\storage\\outputs\\job_test_f_voiceover_closed_mouth_1792422161\\video_16-9.mp4",
+    "resolution": "1920x1080",
+    "total_frames": 360,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_f_voiceover_closed_mouth_frame_72.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_f_voiceover_closed_mouth_frame_180.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_f_voiceover_closed_mouth_frame_288.png"
+    ],
+    "research_provenance": "script_only",
+    "citations_count": 0,
+    "has_research_report": true
+  },
+  {
+    "id": "test_g_portrait_916",
+    "name": "Test G: Vertical Portrait Video (9:16)",
+    "status": "succeeded",
+    "duration_seconds": 63.13,
+    "video_path": "data\\storage\\outputs\\job_test_g_portrait_916_1792422223\\video_9-16.mp4",
+    "resolution": "1080x1920",
+    "total_frames": 265,
+    "extracted_frames": [
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_g_portrait_916_frame_53.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_g_portrait_916_frame_132.png",
+      "c:\\Users\\yuvan\\Documents\\Incubrix\\scratch\\test_g_portrait_916_frame_212.png"
+    ],
+    "research_provenance": "script_plus_research",
+    "citations_count": 2,
+    "has_research_report": true
+  }
+]

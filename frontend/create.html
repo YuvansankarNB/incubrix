@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Video — IncuBrix AI B-roll Studio</title>
+  <link rel="stylesheet" href="/frontend/css/styles.css">
+  <link rel="stylesheet" href="/frontend/css/create.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="/frontend/assets/logo.svg" alt="IncuBrix Logo" width="28" height="28">
+        <div class="brand-text">
+          <span class="brand-name">IncuBrix</span>
+          <span class="brand-tagline">AI B-roll Studio</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="/create.html" class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Create Video
+        </a>
+        <a href="/dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          My Projects
+        </a>
+        <a href="/editor.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Scene Editor
+        </a>
+        <a href="/results.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Sources & Licences
+        </a>
+        <a href="/settings.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <span>v1.0.0 Production</span>
+        <a href="/docs" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">API Docs</a>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header class="top-navbar">
+        <div class="navbar-left">
+          <h1 class="page-title">Video Creation Wizard</h1>
+        </div>
+        <div class="navbar-right">
+          <div class="status-badge" id="system-status">
+            <span class="status-dot"></span>
+            <span>Engine Active</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container" style="max-width: 980px;">
+        <!-- Wizard Step Indicators -->
+        <div class="wizard-progress">
+          <div class="step-item active">
+            <div class="step-circle">1</div>
+            <span class="step-title">Input Type</span>
+          </div>
+          <div class="step-item">
+            <div class="step-circle">2</div>
+            <span class="step-title">Content</span>
+          </div>
+          <div class="step-item">
+            <div class="step-circle">3</div>
+            <span class="step-title">Formatting</span>
+          </div>
+          <div class="step-item">
+            <div class="step-circle">4</div>
+            <span class="step-title">Generate</span>
+          </div>
+        </div>
+
+        <!-- Wizard Card -->
+        <div class="card">
+          <!-- STEP 1: Select Input Type -->
+          <div class="wizard-step-panel" id="step-1-panel">
+            <h3 class="card-title">Select Narration Source</h3>
+            <p style="color:var(--text-muted); margin-bottom:20px;">Choose how you want to provide narration for the B-roll video:</p>
+
+            <div class="input-type-grid">
+              <div class="type-card selected" data-type="script">
+                <div class="type-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div class="type-title">Write a Script</div>
+                <div class="type-desc">Enter narration text and generate speech through neural TTS synthesis.</div>
+              </div>
+
+              <div class="type-card" data-type="topic">
+                <div class="type-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                </div>
+                <div class="type-title">Topic to Video</div>
+                <div class="type-desc">Enter a topic; AI researches facts, creates a verified script, and plans scenes.</div>
+              </div>
+
+              <div class="type-card" data-type="audio">
+                <div class="type-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </div>
+                <div class="type-title">Upload Voiceover</div>
+                <div class="type-desc">Upload MP3, WAV, or M4A audio files up to 10 minutes. Transcribed via Whisper.</div>
+              </div>
+
+              <div class="type-card" data-type="scenes">
+                <div class="type-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                </div>
+                <div class="type-title">Structured Scene List</div>
+                <div class="type-desc">Add individual scenes with explicit narration text and custom visual hints.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: Content Entry -->
+          <div class="wizard-step-panel" id="step-2-panel" style="display:none;">
+            <!-- Script View -->
+            <div id="input-section-script">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label class="form-label">Script Text</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <span style="font-size:0.8rem; color:var(--text-muted); align-self:center;">Presets:</span>
+                  <button type="button" class="btn btn-secondary" id="preset-doctor" style="padding:4px 8px; font-size:0.75rem;">Doctor</button>
+                  <button type="button" class="btn btn-secondary" id="preset-dialogue" style="padding:4px 8px; font-size:0.75rem;">Doctor & Patient</button>
+                  <button type="button" class="btn btn-secondary" id="preset-teacher" style="padding:4px 8px; font-size:0.75rem;">Teacher</button>
+                  <button type="button" class="btn btn-secondary" id="preset-farmer" style="padding:4px 8px; font-size:0.75rem;">Farmer</button>
+                  <button type="button" class="btn btn-secondary" id="preset-clean-energy" style="padding:4px 8px; font-size:0.75rem;">Clean Energy</button>
+                </div>
+              </div>
+              <textarea id="script-text" rows="6" class="form-control" placeholder="Enter narration script here...">Carbon emissions were reduced by 35% across all manufacturing plants. Next-generation product design relies entirely on biodegradable and circular materials. Lasting ecological change is achieved by fostering green literacy within local communities.</textarea>
+              <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.82rem; color:var(--text-muted);">
+                <span id="script-stats">0 words • 0 chars</span>
+                <span>Neural Audio Timing</span>
+              </div>
+
+              <div class="form-group" style="margin-top:18px;">
+                <label class="form-label">Neural TTS Voice</label>
+                <select id="voice-select" class="form-control">
+                  <option value="auto" selected>Auto — Strictly Matched to Character Gender</option>
+                  <optgroup label="English (US) — Male Voices">
+                    <option value="en-US-ChristopherNeural">Male: Christopher (Clinical, Authoritative & Professional)</option>
+                    <option value="en-US-GuyNeural">Male: Guy (Natural, Friendly & Conversational)</option>
+                  </optgroup>
+                  <optgroup label="English (US) — Female Voices">
+                    <option value="en-US-JennyNeural">Female: Jenny (Warm, Expressive & Conversational)</option>
+                    <option value="en-US-AriaNeural">Female: Aria (Professional, Clear & Articulate)</option>
+                    <option value="en-US-AvaNeural">Female: Ava (Bright & Youthful)</option>
+                  </optgroup>
+                  <optgroup label="English (India)">
+                    <option value="en-IN-male">Male: Prabhat (Neural)</option>
+                    <option value="en-IN-female">Female: Neerja (Neural)</option>
+                  </optgroup>
+                  <optgroup label="Hindi">
+                    <option value="hi-IN-male">Male: Madhur (Neural)</option>
+                    <option value="hi-IN-female">Female: Swara (Neural)</option>
+                  </optgroup>
+                  <optgroup label="Tamil">
+                    <option value="ta-IN-male">Male: Valluvar (Neural)</option>
+                    <option value="ta-IN-female">Female: Pallavi (Neural)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px;">
+                <div class="form-group">
+                  <label class="form-label">Target Video Duration</label>
+                  <select id="duration-select" class="form-control">
+                    <option value="auto" selected>Auto (computed from speech pace)</option>
+                    <option value="15">Short (~15 seconds)</option>
+                    <option value="30">Standard (~30 seconds)</option>
+                    <option value="60">Extended (~60 seconds)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Speaker Voice Gender Preference</label>
+                  <select id="voice-gender-select" class="form-control">
+                    <option value="auto" selected>Auto (Role & Speaker Matched)</option>
+                    <option value="male">Natural Male Voice (Christopher / Guy)</option>
+                    <option value="female">Natural Female Voice (Jenny / Aria)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Topic View -->
+            <div id="input-section-topic" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label class="form-label">Topic or Research Prompt</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <span style="font-size:0.8rem; color:var(--text-muted); align-self:center;">Presets:</span>
+                  <button type="button" class="btn btn-secondary" id="preset-topic-cardio" style="padding:4px 8px; font-size:0.75rem;">Cardiovascular Health</button>
+                  <button type="button" class="btn btn-secondary" id="preset-topic-trees" style="padding:4px 8px; font-size:0.75rem;">Urban Tree Canopies</button>
+                  <button type="button" class="btn btn-secondary" id="preset-topic-ai" style="padding:4px 8px; font-size:0.75rem;">Developer AI Velocity</button>
+                </div>
+              </div>
+              <textarea id="topic-text" rows="4" class="form-control" placeholder="Enter topic to research and generate video for...">Urban tree canopies and microclimate cooling in sustainable city infrastructure</textarea>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin-top:6px;">
+                ⚡ The AI engine will research verified peer-reviewed data (EPA, NREL, AHA, APA), write an authoritative script, plan scenes, and synthesize visuals.
+              </div>
+            </div>
+
+            <!-- Audio Upload View -->
+            <div id="input-section-audio" style="display:none;">
+              <div class="dropzone-box" id="dropzone">
+                <input type="file" id="audio-upload-input" accept="audio/mp3,audio/wav,audio/m4a,audio/*" style="display:none;">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <h4 style="font-weight:700; color:var(--text-main); margin-bottom:4px;">Drag & drop audio voiceover file</h4>
+                <p id="dropzone-filename" style="color:var(--text-muted); font-size:0.86rem;">Supports MP3, WAV, M4A up to 10 minutes</p>
+              </div>
+              <audio id="audio-preview" controls style="width:100%; margin-top:14px; display:none;"></audio>
+
+              <div class="form-group" style="margin-top:20px;">
+                <label class="form-label">Or Audio Public URL</label>
+                <input type="url" id="audio-url" class="form-control" placeholder="https://storage.example.com/voiceover.mp3">
+              </div>
+            </div>
+
+            <!-- Structured Scenes View -->
+            <div id="input-section-scenes" style="display:none;">
+              <h4 style="margin-bottom:14px; font-size:1.02rem;">Scene List</h4>
+              <div class="scene-list-builder" id="scene-list-container">
+                <div class="scene-row-card">
+                  <div class="scene-num-badge">1</div>
+                  <div class="scene-inputs">
+                    <input type="text" class="form-control scene-text-input" value="Carbon emissions were reduced by 35% across all manufacturing plants." placeholder="Narration text...">
+                    <input type="text" class="form-control scene-hint-input" value="Clean energy wind farm at sunset with digital carbon metrics overlay" placeholder="Visual search hint...">
+                  </div>
+                </div>
+                <div class="scene-row-card">
+                  <div class="scene-num-badge">2</div>
+                  <div class="scene-inputs">
+                    <input type="text" class="form-control scene-text-input" value="Next-generation product design relies entirely on biodegradable and circular materials." placeholder="Narration text...">
+                    <input type="text" class="form-control scene-hint-input" value="Bright modern laboratory with a scientist examining a plant-based polymer under a microscope" placeholder="Visual search hint...">
+                  </div>
+                </div>
+                <div class="scene-row-card">
+                  <div class="scene-num-badge">3</div>
+                  <div class="scene-inputs">
+                    <input type="text" class="form-control scene-text-input" value="Lasting ecological change is achieved by fostering green literacy within local communities." placeholder="Narration text...">
+                    <input type="text" class="form-control scene-hint-input" value="Open-air community workshop with corporate volunteers planting an urban garden" placeholder="Visual search hint...">
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-add-scene">+ Add Scene</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: Video Configuration -->
+          <div class="wizard-step-panel" id="step-3-panel" style="display:none;">
+            <h3 class="card-title">Video Formatting & Style</h3>
+
+            <!-- Aspect Ratios -->
+            <div class="form-group">
+              <label class="form-label">Output Aspect Ratios (Multi-Ratio Rendering)</label>
+              <div class="aspect-pills">
+                <label class="aspect-check">
+                  <input type="checkbox" id="ratio-16-9" value="16:9" checked>
+                  <span>16:9 Landscape (YouTube/Desktop)</span>
+                </label>
+                <label class="aspect-check">
+                  <input type="checkbox" id="ratio-9-16" value="9:16" checked>
+                  <span>9:16 Portrait (TikTok/Reels/Shorts)</span>
+                </label>
+                <label class="aspect-check">
+                  <input type="checkbox" id="ratio-1-1" value="1:1">
+                  <span>1:1 Square (Instagram/Feed)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Visual Style -->
+            <div class="form-group">
+              <label class="form-label">Visual Style</label>
+              <select id="video-style" class="form-control">
+                <option value="bright, modern, real-world footage" selected>Bright, modern, real-world footage</option>
+                <option value="cinematic">Cinematic 35mm film aesthetic</option>
+                <option value="corporate">Corporate & Enterprise presentation</option>
+                <option value="documentary">Documentary realism</option>
+                <option value="nature">Nature & Ecological landscape</option>
+                <option value="minimal">Minimal & High-contrast modern</option>
+              </select>
+            </div>
+
+            <!-- Intelligent Web Research -->
+            <div class="form-group">
+              <label class="form-label">Intelligent Web Research & Fact-Checking</label>
+              <select id="research-mode" class="form-control">
+                <option value="script_plus_research" selected>Authoritative Web Verification & Enrichment (EPA, NREL, AHA, APA, ACM)</option>
+                <option value="script_only">Script Only (No external web claims or citations)</option>
+                <option value="research_first">Research-First Synthesis (Deep topic research with verified citations)</option>
+              </select>
+              <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                Cross-references authoritative peer-reviewed data and embeds verified statistical badges and citations in the video.
+              </span>
+            </div>
+
+            <!-- Narration & Lip-Sync Behavior -->
+            <div class="form-group">
+              <label class="form-label">Narration Mode & Lip Synchronization</label>
+              <select id="voiceover-mode" class="form-control">
+                <option value="dialogue" selected>Speaking Presenter / Dialogue (Real-time Lip Synchronization)</option>
+                <option value="voiceover">External Voice-Over Narration (Character mouth remains closed; natural breathing & eye contact)</option>
+              </select>
+            </div>
+
+            <!-- Character Presenter -->
+            <div class="form-group">
+              <label class="form-label">Talking Presenter Avatar Role</label>
+              <select id="character-select" class="form-control">
+                <option value="doctor" selected>Doctor (Male) // Dr. Marcus (White coat, stethoscope, clinical consultation)</option>
+                <option value="female_doctor">Doctor (Female) // Dr. Sarah (White coat, stethoscope, clinical consultation)</option>
+                <option value="female_patient">Patient (Female) // Elena (Clinical consultation, seated posture)</option>
+                <option value="patient">Patient (Male) // James (Clinical consultation, seated posture)</option>
+                <option value="teacher">Teacher (Female) // Prof. Clara (Whiteboard presentation & active gesturing)</option>
+                <option value="student">Student (Female) // Emma (Study desk, engaged learner)</option>
+                <option value="executive">Executive (Male) // Alex (Modern business attire & strategic presentation)</option>
+                <option value="narrator">Narrator (Male) // David (Broadcast studio framing & direct audience address)</option>
+                <option value="farmer">Farmer (Male) // Henry (Agricultural specialist & crop inspection)</option>
+                <option value="engineer">Engineer (Male) // Clean Energy Specialist (Technical infrastructure)</option>
+                <option value="doctor, patient">Dialogue // Male Doctor & Female Patient Exchange (Multi-character turn taking)</option>
+              </select>
+              <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                Real-time 3D rendered character animation with zero white halos, natural anatomy, blinking, respiration, and audio-driven lip sync.
+              </span>
+            </div>
+
+            <!-- Contextual Motion Graphics -->
+            <div class="form-group">
+              <label class="form-label">Contextual Motion Graphics & Typography</label>
+              <select id="typography-style" class="form-control">
+                <option value="context_aware" selected>Context-Aware Adaptive Motion Graphics (Negative-space balancing, no face overlap)</option>
+                <option value="minimal_glass">Minimalist Translucent Glassmorphism</option>
+                <option value="bold_broadcast">High-Impact Broadcast Motion Typography</option>
+              </select>
+            </div>
+
+            <!-- Visual Source Selection -->
+            <div class="form-group">
+              <label class="form-label">Visual Asset Sourcing Policy</label>
+              <select id="visual-source-pref" class="form-control">
+                <option value="stock_first" selected>Official Pixabay Stock Footage (Always Use Pixabay Videos)</option>
+                <option value="hybrid">Hybrid Mode (Pixabay stock + AI characters)</option>
+                <option value="ai_first">AI-Generated Video First (Google Veo & Generative Kinematics)</option>
+              </select>
+              <span style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; display:block;">
+                All clips are sourced from the official Pixabay API, verified for commercial use, and recorded with full provenance.
+              </span>
+            </div>
+
+            <!-- Avoid List -->
+            <div class="form-group">
+              <label class="form-label">Avoid Constraints</label>
+              <input type="text" id="avoid-input" class="form-control" placeholder="e.g. alcohol, violence, weapons, blurry footage" value="people's faces, alcohol">
+            </div>
+
+            <!-- Captions -->
+            <div class="form-group">
+              <label class="form-label">Captions & Subtitles</label>
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.9rem; cursor:pointer;">
+                <input type="checkbox" id="burn-captions-check" checked>
+                <span>Burn synchronized captions into final video</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- STEP 4: Review and Generate -->
+          <div class="wizard-step-panel" id="step-4-panel" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h3 class="card-title" style="margin-bottom:2px;">Review & Generate Video</h3>
+                <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:0;">Review your video settings and inspect the AI Scene Plan before rendering:</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-preview-plan" style="font-weight:600; font-size:0.84rem; display:flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span>Preview 13-Field Scene Plan</span>
+              </button>
+            </div>
+
+            <!-- Interactive 13-Field Scene Plan Preview Container -->
+            <div id="scene-plan-accordion" style="display:none; margin-bottom:20px; border:1px solid #c7d2fe; border-radius:var(--radius-lg); background:#f8fafc; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="font-size:0.96rem; font-weight:700; color:var(--text-main); margin-bottom:0;" id="plan-status-heading">AI Structured Scene Plan</h4>
+                <span class="badge badge-primary" id="plan-scene-count-badge">3 Scenes Planned</span>
+              </div>
+              <div id="scene-plan-cards-list" style="display:flex; flex-direction:column; gap:12px; max-height:420px; overflow-y:auto; padding-right:4px;">
+                <!-- Dynamically populated via create.js -->
+              </div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+              <div style="display:flex; justify-content:space-between;">
+                <strong>Narration Source:</strong>
+                <span id="summary-input">-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>Aspect Ratios:</strong>
+                <span id="summary-ratios">-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>Visual Style:</strong>
+                <span id="summary-style">-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>Avoid Constraints:</strong>
+                <span id="summary-avoid">-</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <strong>Captions:</strong>
+                <span id="summary-captions">-</span>
+              </div>
+            </div>
+
+            <div style="background:var(--primary-light); border:1px solid #c7d2fe; border-radius:var(--radius-md); padding:14px; font-size:0.86rem; color:var(--primary);">
+              ⚡ Submitting this job will launch the 11-stage AI video pipeline asynchronously. You will be redirected to the real-time processing monitor.
+            </div>
+          </div>
+
+          <!-- Wizard Footer Controls -->
+          <div class="wizard-footer">
+            <button type="button" class="btn btn-secondary" id="btn-back-step" style="display:none;">&larr; Back</button>
+            <div style="flex:1;"></div>
+            <button type="button" class="btn btn-primary" id="btn-next-step">Continue &rarr;</button>
+            <button type="button" class="btn btn-primary" id="btn-submit-job" style="display:none; background:#10b981;">
+              Generate Video
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="/frontend/js/app.js"></script>
+  <script type="module" src="/frontend/js/create.js"></script>
+</body>
+</html>

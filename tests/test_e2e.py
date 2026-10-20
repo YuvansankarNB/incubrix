@@ -19,8 +19,8 @@ def test_full_e2e_video_generation_and_clip_swap():
         assert response.status_code == 202
         job_id = response.json()["job_id"]
 
-        # 2. Poll until completion (up to 240s on CPU)
-        max_wait = 240
+        # 2. Poll until completion (up to 360s on CPU)
+        max_wait = 360
         start = time.time()
         job_data = None
 

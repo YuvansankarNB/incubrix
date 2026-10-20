@@ -14,14 +14,28 @@ class Settings(BaseSettings):
     PEXELS_API_KEY: Optional[str] = Field(default=None)
     PIXABAY_API_KEY: Optional[str] = Field(default=None)
 
+    # Background Image APIs (for context-relevant HD photographic backgrounds)
+    UNSPLASH_ACCESS_KEY: Optional[str] = Field(default=None)  # https://unsplash.com/developers
+
+    # Talking Avatar / Lip-Sync APIs (for high-quality animated character generation)
+    DID_API_KEY: Optional[str] = Field(default=None)          # https://www.d-id.com
+    SIMLI_API_KEY: Optional[str] = Field(default=None)        # https://www.simli.com
+    HEYGEN_API_KEY: Optional[str] = Field(default=None)       # https://www.heygen.com
+
     # LLM Settings
     LLM_PROVIDER: str = "rule_based" # 'rule_based', 'openai', 'gemini', 'mock'
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
 
-    # Audio Engine
-    TTS_DEFAULT_VOICE_EN: str = "en-US-AriaNeural"
+    # Audio Engine (Male & Female Character Voice Defaults)
+    TTS_DEFAULT_VOICE_EN_MALE: str = "en-US-ChristopherNeural"
+    TTS_DEFAULT_VOICE_EN_FEMALE: str = "en-US-JennyNeural"
+    TTS_DEFAULT_VOICE_EN: str = "en-US-ChristopherNeural"
+    TTS_DEFAULT_VOICE_HI_MALE: str = "hi-IN-MadhurNeural"
+    TTS_DEFAULT_VOICE_HI_FEMALE: str = "hi-IN-SwaraNeural"
     TTS_DEFAULT_VOICE_HI: str = "hi-IN-SwaraNeural"
+    TTS_DEFAULT_VOICE_TA_MALE: str = "ta-IN-ValluvarNeural"
+    TTS_DEFAULT_VOICE_TA_FEMALE: str = "ta-IN-PallaviNeural"
     TTS_DEFAULT_VOICE_TA: str = "ta-IN-PallaviNeural"
     WHISPER_MODEL_SIZE: str = "base"
 

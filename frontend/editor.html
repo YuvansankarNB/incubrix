@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scene Editor — IncuBrix AI B-roll Studio</title>
+  <link rel="stylesheet" href="/frontend/css/styles.css">
+  <link rel="stylesheet" href="/frontend/css/editor.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="/frontend/assets/logo.svg" alt="IncuBrix Logo" width="28" height="28">
+        <div class="brand-text">
+          <span class="brand-name">IncuBrix</span>
+          <span class="brand-tagline">AI B-roll Studio</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="/create.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Create Video
+        </a>
+        <a href="/dashboard.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          My Projects
+        </a>
+        <a href="/editor.html" class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Scene Editor
+        </a>
+        <a href="/results.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Sources & Licences
+        </a>
+        <a href="/settings.html" class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <span>v1.0.0 Production</span>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header class="top-navbar">
+        <div class="navbar-left">
+          <h1 class="page-title">Scene Timeline Editor</h1>
+        </div>
+        <div class="navbar-right">
+          <div class="status-badge" id="system-status">
+            <span class="status-dot"></span>
+            <span>Engine Active</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:1.35rem; font-weight:700;">Scene Timeline & Clip Replacement</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Inspect and replace footage for any scene with automated re-rendering.</p>
+          </div>
+        </div>
+
+        <!-- Scene Cards List -->
+        <div class="editor-container" id="scenes-editor-list">
+          <!-- Populated dynamically via editor.js -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Replace Footage Modal -->
+  <div class="modal-backdrop hidden" id="swap-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Replace Footage for Scene <span id="modal-scene-idx-text">1</span></h3>
+        <button type="button" class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:var(--radius-md); padding:12px; margin-bottom:16px;">
+          <span style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">Current Narration:</span>
+          <p id="modal-scene-narration" style="font-size:0.88rem; color:var(--text-main); margin-top:2px;"></p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Replacement Search Query</label>
+          <input type="text" id="swap-query-input" class="form-control" placeholder="e.g. Modern biotechnology scientist microscope">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Footage Provider</label>
+          <select id="swap-provider-select" class="form-control">
+            <option value="auto">Auto (Smart Rule-Based Provider Match)</option>
+            <option value="pexels">Pexels Commercial Stock API</option>
+            <option value="pixabay">Pixabay Commercial Stock API</option>
+            <option value="ai_gen">IncuBrix Kinetic Motion Synthesis</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-modal">Confirm Replacement & Re-render</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/frontend/js/app.js"></script>
+  <script type="module" src="/frontend/js/editor.js"></script>
+</body>
+</html>

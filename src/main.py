@@ -88,9 +88,49 @@ web_dir = Path("./src/web")
 web_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(web_dir)), name="static")
 
+frontend_dir = Path("./frontend")
+frontend_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/frontend", StaticFiles(directory=str(frontend_dir)), name="frontend")
+
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    index_file = web_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
+    dash = frontend_dir / "dashboard.html"
+    if dash.exists():
+        return FileResponse(str(dash))
+    idx = frontend_dir / "index.html"
+    if idx.exists():
+        return FileResponse(str(idx))
+    web_idx = web_dir / "index.html"
+    if web_idx.exists():
+        return FileResponse(str(web_idx))
     return JSONResponse({"message": "IncuBrix Engine running. Open /docs for OpenAPI documentation."})
+
+@app.get("/dashboard", include_in_schema=False)
+@app.get("/dashboard.html", include_in_schema=False)
+async def serve_dashboard():
+    return FileResponse(str(frontend_dir / "dashboard.html"))
+
+@app.get("/create", include_in_schema=False)
+@app.get("/create.html", include_in_schema=False)
+async def serve_create():
+    return FileResponse(str(frontend_dir / "create.html"))
+
+@app.get("/processing", include_in_schema=False)
+@app.get("/processing.html", include_in_schema=False)
+async def serve_processing():
+    return FileResponse(str(frontend_dir / "processing.html"))
+
+@app.get("/results", include_in_schema=False)
+@app.get("/results.html", include_in_schema=False)
+async def serve_results():
+    return FileResponse(str(frontend_dir / "results.html"))
+
+@app.get("/editor", include_in_schema=False)
+@app.get("/editor.html", include_in_schema=False)
+async def serve_editor():
+    return FileResponse(str(frontend_dir / "editor.html"))
+
+@app.get("/settings", include_in_schema=False)
+@app.get("/settings.html", include_in_schema=False)
+async def serve_settings():
+    return FileResponse(str(frontend_dir / "settings.html"))

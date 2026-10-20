@@ -92,8 +92,9 @@ class VideoRenderer:
             "-t", str(duration),
             "-filter_complex", filter_complex,
             "-c:v", "libx264",
-            "-preset", "veryfast",
-            "-crf", "22",
+            "-preset", "ultrafast",
+            "-threads", "0",
+            "-crf", "23",
             "-an", # No original audio from b-roll
             str(output_path)
         ]
@@ -160,7 +161,7 @@ class VideoRenderer:
             srt_str = str(srt_path.resolve()).replace("\\", "/").replace(":", "\\:")
             # Small burned-in captions at the bottom — FontSize=13 keeps them out of the content area
             subtitle_filter = f"subtitles='{srt_str}':force_style='FontSize=13,PrimaryColour=&H00FFFFFF,BackColour=&H80000000,BorderStyle=4,Outline=1,Shadow=0,MarginV=18,Alignment=2'"
-            cmd_final.extend(["-vf", subtitle_filter, "-c:v", "libx264", "-preset", "veryfast", "-crf", "22"])
+            cmd_final.extend(["-vf", subtitle_filter, "-c:v", "libx264", "-preset", "ultrafast", "-threads", "0", "-crf", "23"])
         else:
             cmd_final.extend(["-c:v", "copy"])
 
