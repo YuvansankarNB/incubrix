@@ -24,8 +24,13 @@ wheels/
 *.egg
 
 # Storage / Output data
-data/
-storage/
+/data/storage/
+/data/footage_cache/
+/data/cache/backgrounds/*.jpg
+!/data/cache/backgrounds/hospital_room.jpg
+!/data/cache/backgrounds/urban_garden.jpg
+!/data/cache/backgrounds/wind_farm.jpg
+/storage/
 temp/
 *.mp4
 *.mp3
